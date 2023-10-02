@@ -1,0 +1,97 @@
+/*
+ * Licensed to the Apache Software Foundation (ASF) under one
+ * or more contributor license agreements.  See the NOTICE file
+ * distributed with this work for additional information
+ * regarding copyright ownership.  The ASF licenses this file
+ * to you under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance
+ * with the License.  You may obtain a copy of the License at
+ *
+ *   http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing,
+ * software distributed under the License is distributed on an
+ * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ * KIND, either express or implied.  See the License for the
+ * specific language governing permissions and limitations
+ * under the License.
+ */
+package org.apache.hyracks.tests.util;
+
+import java.nio.ByteBuffer;
+import java.util.BitSet;
+
+import org.apache.hyracks.api.comm.FrameHelper;
+import org.apache.hyracks.api.comm.IFrameWriter;
+import org.apache.hyracks.api.comm.IPartitionCollector;
+import org.apache.hyracks.api.comm.IPartitionWriterFactory;
+import org.apache.hyracks.api.context.IHyracksTaskContext;
+import org.apache.hyracks.api.dataflow.IConnectorDescriptor;
+import org.apache.hyracks.api.dataflow.value.RecordDescriptor;
+import org.apache.hyracks.api.exceptions.HyracksDataException;
+import org.apache.hyracks.api.job.IConnectorDescriptorRegistry;
+import org.apache.hyracks.dataflow.std.base.AbstractConnectorDescriptor;
+import org.apache.hyracks.dataflow.std.base.AbstractDelegateFrameWriter;
+
+public class MarkerLocalPartitionConnectorDescriptor extends AbstractConnectorDescriptor {
+    private final IConnectorDescriptor delegateConnectorDescriptor;
+
+    public MarkerLocalPartitionConnectorDescriptor(IConnectorDescriptorRegistry spec, IConnectorDescriptor delegate) {
+        super(spec);
+        this.delegateConnectorDescriptor = delegate;
+    }
+
+    @Override
+    public IFrameWriter createPartitioner(IHyracksTaskContext ctx, RecordDescriptor recordDesc,
+            IPartitionWriterFactory edwFactory, int index, int nProducerPartitions, int nConsumerPartitions)
+            throws HyracksDataException {
+        // We will share partition-writers with our delegate. Our delegate will close / fail / flush these.
+        final IFrameWriter[] epWriters = new IFrameWriter[nConsumerPartitions];
+        for (int i = 0; i < nConsumerPartitions; i++) {
+            epWriters[i] = edwFactory.createFrameWriter(i);
+        }
+        IFrameWriter delegatePartitioner = delegateConnectorDescriptor.createPartitioner(ctx, recordDesc,
+                receiverIndex -> epWriters[receiverIndex], index, nProducerPartitions, nConsumerPartitions);
+
+        // Find our local partition-writer. If none exist, then we drop our marker frame.
+        boolean doesLocalPartitionWriterExist = index < nConsumerPartitions;
+
+        // Our marker frame consumer needs to write our frame to our local partition-writer.
+        return new AbstractDelegateFrameWriter(delegatePartitioner) {
+            @Override
+            public void nextFrame(ByteBuffer buffer) throws HyracksDataException {
+                if (!FrameHelper.isMessageFrame(buffer)) {
+                    super.nextFrame(buffer);
+                } else if (doesLocalPartitionWriterExist) {
+                    epWriters[index].nextFrame(buffer);
+                }
+            }
+        };
+    }
+
+    @Override
+    public IPartitionCollector createPartitionCollector(IHyracksTaskContext ctx, RecordDescriptor recordDesc,
+            int receiverIndex, int nProducerPartitions, int nConsumerPartitions) throws HyracksDataException {
+        return delegateConnectorDescriptor.createPartitionCollector(ctx, recordDesc, receiverIndex, nProducerPartitions,
+                nConsumerPartitions);
+    }
+
+    @Override
+    public void indicateTargetPartitions(int nProducerPartitions, int nConsumerPartitions, int producerIndex,
+            BitSet targetBitmap) {
+        delegateConnectorDescriptor.indicateTargetPartitions(nProducerPartitions, nConsumerPartitions, producerIndex,
+                targetBitmap);
+    }
+
+    @Override
+    public void indicateSourcePartitions(int nProducerPartitions, int nConsumerPartitions, int consumerIndex,
+            BitSet sourceBitmap) {
+        delegateConnectorDescriptor.indicateSourcePartitions(nProducerPartitions, nConsumerPartitions, consumerIndex,
+                sourceBitmap);
+    }
+
+    @Override
+    public boolean allProducersToAllConsumers() {
+        return delegateConnectorDescriptor.allProducersToAllConsumers();
+    }
+}
