@@ -1,0 +1,79 @@
+/*
+ * Licensed to the Apache Software Foundation (ASF) under one
+ * or more contributor license agreements.  See the NOTICE file
+ * distributed with this work for additional information
+ * regarding copyright ownership.  The ASF licenses this file
+ * to you under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance
+ * with the License.  You may obtain a copy of the License at
+ *
+ *   http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing,
+ * software distributed under the License is distributed on an
+ * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ * KIND, either express or implied.  See the License for the
+ * specific language governing permissions and limitations
+ * under the License.
+ */
+SET `graphix.evaluation.prefer-indexnl` "false";
+
+-- param compile-only:string=true
+-- param optimized-logical-plan:string=true
+-- param plan-format:string=string
+
+EXPLAIN
+LET
+    personScores = (
+        FROM
+            (
+                FROM
+                    GRAPH SNB.Native.SNBGraph
+                        (person:Person)-[:HAS_INTEREST]->(tag:Tag)
+                WHERE
+                    tag.name = "Bukovina"
+                SELECT
+                    person.id AS id,
+                    100       AS score
+                UNION ALL
+                FROM
+                    GRAPH SNB.Native.SNBGraph
+                        (message:Message)-[:HAS_TAG]->(tag:Tag),
+                        (message)-[:HAS_CREATOR]->(person:Person)
+                WHERE
+                    tag.name = "Bukovina" AND
+                    message.creationDate > DATETIME("2010-11-15T00:00:00.000Z") AND
+                    message.creationDate < DATETIME("2010-11-27T00:00:00.000Z")
+                GROUP BY
+                    person.id AS id
+                SELECT
+                    id                AS id,
+                    COUNT(message.id) AS score
+        ) AS t
+        GROUP BY
+            t.id
+        SELECT
+            t.id         AS id,
+            SUM(t.score) AS score
+    )
+FROM
+    GRAPH SNB.Native.SNBGraph
+        (p1:Person)
+    LEFT MATCH
+        (p1)-[:KNOWS]->(p2:Person)
+    JOIN
+        personScores ps1 ON ps1.id = p1.id
+    LEFT JOIN
+        personScores ps2 ON ps2.id = p2.id
+GROUP BY
+    p1.id     AS id1,
+    ps1.score AS score
+SELECT
+    id1            AS id,
+    score          AS score,
+    SUM(ps2.score) AS friendsScore
+ORDER BY
+    score + friendsScore DESC,
+    id ASC
+LIMIT
+    100;

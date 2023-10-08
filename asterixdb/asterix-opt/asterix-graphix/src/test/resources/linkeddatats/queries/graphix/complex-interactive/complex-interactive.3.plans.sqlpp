@@ -1,0 +1,60 @@
+/*
+ * Licensed to the Apache Software Foundation (ASF) under one
+ * or more contributor license agreements.  See the NOTICE file
+ * distributed with this work for additional information
+ * regarding copyright ownership.  The ASF licenses this file
+ * to you under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance
+ * with the License.  You may obtain a copy of the License at
+ *
+ *   http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing,
+ * software distributed under the License is distributed on an
+ * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ * KIND, either express or implied.  See the License for the
+ * specific language governing permissions and limitations
+ * under the License.
+ */
+SET `graphix.evaluation.prefer-indexnl` "true";
+
+-- param compile-only:string=true
+-- param optimized-logical-plan:string=true
+-- param plan-format:string=string
+
+EXPLAIN
+FROM
+    GRAPH SNB.Native.SNBGraph
+        (person:Person WHERE person.id = 14)-[:KNOWS{1,2}]->(otherPerson:Person),
+        (otherPerson)<-[:HAS_CREATOR]-(m1:Message)-[:IS_LOCATED_IN]->(countryX:Country),
+        (otherPerson)<-[:HAS_CREATOR]-(m2:Message)-[:IS_LOCATED_IN]->(countryY:Country),
+        (otherPerson)-[:IS_LOCATED_IN]->(city:City)
+LET
+    endDate = DATETIME("2020-03-10T00:00:00") + DURATION("P5D")
+WHERE
+    ( m1.creationDate BETWEEN DATETIME("2000-03-10T00:00:00") AND endDate ) AND
+    ( m2.creationDate BETWEEN DATETIME("2000-03-10T00:00:00") AND endDate ) AND
+    countryX.name = "China" AND
+    countryY.name = "China" AND
+    city.containerId != countryX.id AND
+    city.containedId != countryY.id
+GROUP BY
+    person.id,
+    otherPerson.id,
+    otherPerson
+    GROUP AS g
+LET
+    xCount = ARRAY_COUNT((FROM g SELECT DISTINCT g.m1.id)),
+    yCount = ARRAY_COUNT((FROM g SELECT DISTINCT g.m2.id))
+SELECT
+    otherPerson.id        AS personId,
+    otherPerson.firstName AS personFirstName,
+    otherPerson.lastName  AS personLastName,
+    xCount                AS xCount,
+    yCount                AS yCount,
+    xCount + yCount       AS `count`
+ORDER BY
+    `count` DESC,
+    personId ASC
+LIMIT
+    10;

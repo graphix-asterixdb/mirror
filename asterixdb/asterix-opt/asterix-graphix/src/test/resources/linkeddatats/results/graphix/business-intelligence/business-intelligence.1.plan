@@ -1,0 +1,94 @@
+distribute result [$$297] [cardinality: 0.0, op-cost: 0.0, total-cost: 0.0]
+-- DISTRIBUTE_RESULT  |PARTITIONED|
+  exchange [cardinality: 0.0, op-cost: 0.0, total-cost: 0.0]
+  -- ONE_TO_ONE_EXCHANGE  |PARTITIONED|
+    project ([$$297]) [cardinality: 0.0, op-cost: 0.0, total-cost: 0.0]
+    -- STREAM_PROJECT  |PARTITIONED|
+      assign [$$297] <- [{"year": $$year, "isComment": $$isComment, "lengthCategory": $$lengthCategory, "messageCount": $$305, "averageMessageLength": $$306, "sumMessageLength": $$307, "percentageOfMessages": numeric-divide(numeric-multiply($$308, 100.0), get-item($$274, 0))}] [cardinality: 0.0, op-cost: 0.0, total-cost: 0.0]
+      -- ASSIGN  |PARTITIONED|
+        exchange [cardinality: 0.0, op-cost: 0.0, total-cost: 0.0]
+        -- SORT_MERGE_EXCHANGE [$$year(DESC), $$isComment(ASC), $$lengthCategory(ASC) ]  |PARTITIONED|
+          order (DESC, $$year) (ASC, $$isComment) (ASC, $$lengthCategory) [cardinality: 0.0, op-cost: 0.0, total-cost: 0.0]
+          -- STABLE_SORT [$$year(DESC), $$isComment(ASC), $$lengthCategory(ASC)]  |PARTITIONED|
+            exchange [cardinality: 0.0, op-cost: 0.0, total-cost: 0.0]
+            -- ONE_TO_ONE_EXCHANGE  |PARTITIONED|
+              join (true) [cardinality: 0.0, op-cost: 0.0, total-cost: 0.0]
+              -- NESTED_LOOP  |PARTITIONED|
+                exchange [cardinality: 0.0, op-cost: 0.0, total-cost: 0.0]
+                -- ONE_TO_ONE_EXCHANGE  |PARTITIONED|
+                  group by ([$$year := $$326; $$isComment := $$327; $$lengthCategory := $$328]) decor ([]) {
+                            aggregate [$$305, $$306, $$307, $$308] <- [agg-sql-sum($$322), agg-global-sql-avg($$323), agg-global-sql-sum($$324), agg-sql-sum($$325)] [cardinality: 0.0, op-cost: 0.0, total-cost: 0.0]
+                            -- AGGREGATE  |LOCAL|
+                              nested tuple source [cardinality: 0.0, op-cost: 0.0, total-cost: 0.0]
+                              -- NESTED_TUPLE_SOURCE  |LOCAL|
+                         } [cardinality: 0.0, op-cost: 0.0, total-cost: 0.0]
+                  -- SORT_GROUP_BY[$$326, $$327, $$328]  |PARTITIONED|
+                    exchange [cardinality: 0.0, op-cost: 0.0, total-cost: 0.0]
+                    -- HASH_PARTITION_EXCHANGE [$$326, $$327, $$328]  |PARTITIONED|
+                      group by ([$$326 := $$year; $$327 := $$isComment; $$328 := $$lengthCategory]) decor ([]) {
+                                aggregate [$$322, $$323, $$324, $$325] <- [agg-sql-count(1), agg-local-sql-avg(string-length($$304)), agg-local-sql-sum(string-length($$304)), agg-sql-count(1)] [cardinality: 0.0, op-cost: 0.0, total-cost: 0.0]
+                                -- AGGREGATE  |LOCAL|
+                                  nested tuple source [cardinality: 0.0, op-cost: 0.0, total-cost: 0.0]
+                                  -- NESTED_TUPLE_SOURCE  |LOCAL|
+                             } [cardinality: 0.0, op-cost: 0.0, total-cost: 0.0]
+                      -- SORT_GROUP_BY[$$year, $$isComment, $$lengthCategory]  |PARTITIONED|
+                        exchange [cardinality: 0.0, op-cost: 0.0, total-cost: 0.0]
+                        -- ONE_TO_ONE_EXCHANGE  |PARTITIONED|
+                          project ([$$304, $$year, $$isComment, $$lengthCategory]) [cardinality: 0.0, op-cost: 0.0, total-cost: 0.0]
+                          -- STREAM_PROJECT  |PARTITIONED|
+                            assign [$$lengthCategory, $$isComment, $$year] <- [switch-case(true, lt($$330, 40), 0, lt($$330, 80), 1, lt($$330, 160), 2, 3), not($COPY_OF(message,1).getField(12)), get-year($$301)] [cardinality: 0.0, op-cost: 0.0, total-cost: 0.0]
+                            -- ASSIGN  |PARTITIONED|
+                              assign [$$330] <- [string-length($$304)] [cardinality: 0.0, op-cost: 0.0, total-cost: 0.0]
+                              -- ASSIGN  |PARTITIONED|
+                                select (and(lt($$301, datetime: { 2011-04-30T09:09:38.000 }), not(is-null($$304)))) [cardinality: 0.0, op-cost: 0.0, total-cost: 0.0]
+                                -- STREAM_SELECT  |PARTITIONED|
+                                  assign [$$304, $$301] <- [$COPY_OF(message,1).getField(6), $COPY_OF(message,1).getField(2)] [cardinality: 0.0, op-cost: 0.0, total-cost: 0.0]
+                                  -- ASSIGN  |PARTITIONED|
+                                    exchange [cardinality: 0.0, op-cost: 0.0, total-cost: 0.0]
+                                    -- ONE_TO_ONE_EXCHANGE  |PARTITIONED|
+                                      replicate [cardinality: 0.0, op-cost: 0.0, total-cost: 0.0]
+                                      -- REPLICATE  |PARTITIONED|
+                                        exchange [cardinality: 0.0, op-cost: 0.0, total-cost: 0.0]
+                                        -- ONE_TO_ONE_EXCHANGE  |PARTITIONED|
+                                          project ([$COPY_OF(message,1)]) [cardinality: 0.0, op-cost: 0.0, total-cost: 0.0]
+                                          -- STREAM_PROJECT  |PARTITIONED|
+                                            exchange [cardinality: 0.0, op-cost: 0.0, total-cost: 0.0]
+                                            -- ONE_TO_ONE_EXCHANGE  |PARTITIONED|
+                                              data-scan []<-[$$302, $COPY_OF(message,1)] <- SNB.Native.Messages [cardinality: 0.0, op-cost: 0.0, total-cost: 0.0]
+                                              -- DATASOURCE_SCAN  |PARTITIONED|
+                                                exchange [cardinality: 0.0, op-cost: 0.0, total-cost: 0.0]
+                                                -- ONE_TO_ONE_EXCHANGE  |PARTITIONED|
+                                                  empty-tuple-source [cardinality: 0.0, op-cost: 0.0, total-cost: 0.0]
+                                                  -- EMPTY_TUPLE_SOURCE  |PARTITIONED|
+                exchange [cardinality: 0.0, op-cost: 0.0, total-cost: 0.0]
+                -- BROADCAST_EXCHANGE  |PARTITIONED|
+                  aggregate [$$274] <- [listify($$321)] [cardinality: 0.0, op-cost: 0.0, total-cost: 0.0]
+                  -- AGGREGATE  |UNPARTITIONED|
+                    aggregate [$$321] <- [agg-sql-sum($$329)] [cardinality: 0.0, op-cost: 0.0, total-cost: 0.0]
+                    -- AGGREGATE  |UNPARTITIONED|
+                      exchange [cardinality: 0.0, op-cost: 0.0, total-cost: 0.0]
+                      -- RANDOM_MERGE_EXCHANGE  |PARTITIONED|
+                        aggregate [$$329] <- [agg-sql-count(1)] [cardinality: 0.0, op-cost: 0.0, total-cost: 0.0]
+                        -- AGGREGATE  |PARTITIONED|
+                          select (and(not(is-null($$311.getField(6))), lt($$311.getField(2), datetime: { 2011-04-30T09:09:38.000 }))) [cardinality: 0.0, op-cost: 0.0, total-cost: 0.0]
+                          -- STREAM_SELECT  |PARTITIONED|
+                            project ([$$311]) [cardinality: 0.0, op-cost: 0.0, total-cost: 0.0]
+                            -- STREAM_PROJECT  |PARTITIONED|
+                              assign [$$311] <- [$COPY_OF(message,1)] [cardinality: 0.0, op-cost: 0.0, total-cost: 0.0]
+                              -- ASSIGN  |PARTITIONED|
+                                exchange [cardinality: 0.0, op-cost: 0.0, total-cost: 0.0]
+                                -- ONE_TO_ONE_EXCHANGE  |PARTITIONED|
+                                  replicate [cardinality: 0.0, op-cost: 0.0, total-cost: 0.0]
+                                  -- REPLICATE  |PARTITIONED|
+                                    exchange [cardinality: 0.0, op-cost: 0.0, total-cost: 0.0]
+                                    -- ONE_TO_ONE_EXCHANGE  |PARTITIONED|
+                                      project ([$COPY_OF(message,1)]) [cardinality: 0.0, op-cost: 0.0, total-cost: 0.0]
+                                      -- STREAM_PROJECT  |PARTITIONED|
+                                        exchange [cardinality: 0.0, op-cost: 0.0, total-cost: 0.0]
+                                        -- ONE_TO_ONE_EXCHANGE  |PARTITIONED|
+                                          data-scan []<-[$$302, $COPY_OF(message,1)] <- SNB.Native.Messages [cardinality: 0.0, op-cost: 0.0, total-cost: 0.0]
+                                          -- DATASOURCE_SCAN  |PARTITIONED|
+                                            exchange [cardinality: 0.0, op-cost: 0.0, total-cost: 0.0]
+                                            -- ONE_TO_ONE_EXCHANGE  |PARTITIONED|
+                                              empty-tuple-source [cardinality: 0.0, op-cost: 0.0, total-cost: 0.0]
+                                              -- EMPTY_TUPLE_SOURCE  |PARTITIONED|

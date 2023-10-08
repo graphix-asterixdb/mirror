@@ -1,0 +1,285 @@
+distribute result [$$857] [cardinality: 0.0, op-cost: 0.0, total-cost: 0.0]
+-- DISTRIBUTE_RESULT  |PARTITIONED|
+  exchange [cardinality: 0.0, op-cost: 0.0, total-cost: 0.0]
+  -- ONE_TO_ONE_EXCHANGE  |PARTITIONED|
+    project ([$$857]) [cardinality: 0.0, op-cost: 0.0, total-cost: 0.0]
+    -- STREAM_PROJECT  |PARTITIONED|
+      assign [$$857] <- [{"personIdsInPath": $$903, "pathWeight": $#15}] [cardinality: 0.0, op-cost: 0.0, total-cost: 0.0]
+      -- ASSIGN  |PARTITIONED|
+        exchange [cardinality: 0.0, op-cost: 0.0, total-cost: 0.0]
+        -- SORT_MERGE_EXCHANGE [$#15(DESC) ]  |PARTITIONED|
+          order (DESC, $#15) [cardinality: 0.0, op-cost: 0.0, total-cost: 0.0]
+          -- STABLE_SORT [$#15(DESC)]  |PARTITIONED|
+            exchange [cardinality: 0.0, op-cost: 0.0, total-cost: 0.0]
+            -- ONE_TO_ONE_EXCHANGE  |PARTITIONED|
+              project ([$$903, $#15]) [cardinality: 0.0, op-cost: 0.0, total-cost: 0.0]
+              -- STREAM_PROJECT  |PARTITIONED|
+                assign [$$903, $#15] <- [$$915.getField(0), $$915.getField("cost")] [cardinality: 0.0, op-cost: 0.0, total-cost: 0.0]
+                -- ASSIGN  |PARTITIONED|
+                  project ([$$915]) [cardinality: 0.0, op-cost: 0.0, total-cost: 0.0]
+                  -- STREAM_PROJECT  |PARTITIONED|
+                    assign [$$915] <- [get-item($$852, 0)] [cardinality: 0.0, op-cost: 0.0, total-cost: 0.0]
+                    -- ASSIGN  |PARTITIONED|
+                      project ([$$852]) [cardinality: 0.0, op-cost: 0.0, total-cost: 0.0]
+                      -- STREAM_PROJECT  |PARTITIONED|
+                        exchange [cardinality: 0.0, op-cost: 0.0, total-cost: 0.0]
+                        -- ONE_TO_ONE_EXCHANGE  |PARTITIONED|
+                          group by ([$$id := $$866; $#1 := $$872]) decor ([]) {
+                                    aggregate [$$852] <- [listify($$850)] [cardinality: 0.0, op-cost: 0.0, total-cost: 0.0]
+                                    -- AGGREGATE  |LOCAL|
+                                      limit 1 [cardinality: 0.0, op-cost: 0.0, total-cost: 0.0]
+                                      -- STREAM_LIMIT  |LOCAL|
+                                        order (ASC, $$862) [cardinality: 0.0, op-cost: 0.0, total-cost: 0.0]
+                                        -- MICRO_STABLE_SORT [$$862(ASC)]  |LOCAL|
+                                          assign [$$862, $$850] <- [abs($$913), {"ids": $$849, "cost": $$913}] [cardinality: 0.0, op-cost: 0.0, total-cost: 0.0]
+                                          -- ASSIGN  |LOCAL|
+                                            assign [$$913] <- [get-item($$842, 0)] [cardinality: 0.0, op-cost: 0.0, total-cost: 0.0]
+                                            -- ASSIGN  |LOCAL|
+                                              subplan {
+                                                        aggregate [$$849] <- [listify($$848)] [cardinality: 0.0, op-cost: 0.0, total-cost: 0.0]
+                                                        -- AGGREGATE  |LOCAL|
+                                                          assign [$$848] <- [$$kv.getField(0)] [cardinality: 0.0, op-cost: 0.0, total-cost: 0.0]
+                                                          -- ASSIGN  |LOCAL|
+                                                            unnest $$kv <- scan-collection($$901.getField(0)) [cardinality: 0.0, op-cost: 0.0, total-cost: 0.0]
+                                                            -- UNNEST  |LOCAL|
+                                                              nested tuple source [cardinality: 0.0, op-cost: 0.0, total-cost: 0.0]
+                                                              -- NESTED_TUPLE_SOURCE  |LOCAL|
+                                                     } [cardinality: 0.0, op-cost: 0.0, total-cost: 0.0]
+                                              -- SUBPLAN  |LOCAL|
+                                                subplan {
+                                                          aggregate [$$842] <- [listify($$879)] [cardinality: 0.0, op-cost: 0.0, total-cost: 0.0]
+                                                          -- AGGREGATE  |LOCAL|
+                                                            aggregate [$$879] <- [agg-sql-sum($$839)] [cardinality: 0.0, op-cost: 0.0, total-cost: 0.0]
+                                                            -- AGGREGATE  |LOCAL|
+                                                              assign [$$839] <- [$$882.getField(2)] [cardinality: 0.0, op-cost: 0.0, total-cost: 0.0]
+                                                              -- ASSIGN  |LOCAL|
+                                                                unnest $$882 <- scan-collection($$901.getField(1)) [cardinality: 0.0, op-cost: 0.0, total-cost: 0.0]
+                                                                -- UNNEST  |LOCAL|
+                                                                  nested tuple source [cardinality: 0.0, op-cost: 0.0, total-cost: 0.0]
+                                                                  -- NESTED_TUPLE_SOURCE  |LOCAL|
+                                                       } [cardinality: 0.0, op-cost: 0.0, total-cost: 0.0]
+                                                -- SUBPLAN  |LOCAL|
+                                                  assign [$$901] <- [translate-forward-path($COPY_OF(k,6))] [cardinality: 0.0, op-cost: 0.0, total-cost: 0.0]
+                                                  -- ASSIGN  |LOCAL|
+                                                    nested tuple source [cardinality: 0.0, op-cost: 0.0, total-cost: 0.0]
+                                                    -- NESTED_TUPLE_SOURCE  |LOCAL|
+                                 } [cardinality: 0.0, op-cost: 0.0, total-cost: 0.0]
+                          -- PRE_CLUSTERED_GROUP_BY[$$866, $$872]  |PARTITIONED|
+                            exchange [cardinality: 0.0, op-cost: 0.0, total-cost: 0.0]
+                            -- ONE_TO_ONE_EXCHANGE  |PARTITIONED|
+                              order (ASC, $$866) (ASC, $$872) [cardinality: 0.0, op-cost: 0.0, total-cost: 0.0]
+                              -- STABLE_SORT [$$866(ASC), $$872(ASC)]  |PARTITIONED|
+                                exchange [cardinality: 0.0, op-cost: 0.0, total-cost: 0.0]
+                                -- HASH_PARTITION_EXCHANGE [$$866, $$872]  |PARTITIONED|
+                                  select (not(eq($$866, $$872))) [cardinality: 0.0, op-cost: 0.0, total-cost: 0.0]
+                                  -- STREAM_SELECT  |PARTITIONED|
+                                    project ([$COPY_OF(k,6), $$866, $$872]) [cardinality: 0.0, op-cost: 0.0, total-cost: 0.0]
+                                    -- STREAM_PROJECT  |PARTITIONED|
+                                      exchange [cardinality: 0.0, op-cost: 0.0, total-cost: 0.0]
+                                      -- ONE_TO_ONE_EXCHANGE  |PARTITIONED|
+                                        join (eq($$888, $$872)) [cardinality: 0.0, op-cost: 0.0, total-cost: 0.0]
+                                        -- HYBRID_HASH_JOIN [$$888][$$872]  |PARTITIONED|
+                                          exchange [cardinality: 0.0, op-cost: 0.0, total-cost: 0.0]
+                                          -- HASH_PARTITION_EXCHANGE [$$888]  |PARTITIONED|
+                                            project ([$COPY_OF(k,6), $$866, $$888]) [cardinality: 0.0, op-cost: 0.0, total-cost: 0.0]
+                                            -- STREAM_PROJECT  |PARTITIONED|
+                                              assign [$$888] <- [$COPY_OF(person2,3).getField(0)] [cardinality: 0.0, op-cost: 0.0, total-cost: 0.0]
+                                              -- ASSIGN  |PARTITIONED|
+                                                select (ge(optimized-edge-count($COPY_OF(k,6)), 1)) [cardinality: 0.0, op-cost: 0.0, total-cost: 0.0]
+                                                -- STREAM_SELECT  |PARTITIONED|
+                                                  marker-sink [cardinality: 0.0, op-cost: 0.0, total-cost: 0.0]
+                                                  -- MARKER_SINK  |PARTITIONED|
+                                                    exchange [cardinality: 0.0, op-cost: 0.0, total-cost: 0.0]
+                                                    -- STATE_RELEASE (ONE_TO_ONE_EXCHANGE)  |PARTITIONED|
+                                                      recursive-head [$COPY_OF(k,3) <- $COPY_OF(k,6),$#2 <- $COPY_OF(person2,3)] [cardinality: 0.0, op-cost: 0.0, total-cost: 0.0]
+                                                      -- RECURSIVE_HEAD  |PARTITIONED|
+                                                        exchange [cardinality: 0.0, op-cost: 0.0, total-cost: 0.0]
+                                                        -- STATE_RELEASE (ONE_TO_ONE_EXCHANGE)  |PARTITIONED|
+                                                          project ([$COPY_OF(k,6), $COPY_OF(person2,3), $$866]) [cardinality: 0.0, op-cost: 0.0, total-cost: 0.0]
+                                                          -- STATE_RELEASE (STREAM_PROJECT)  |PARTITIONED|
+                                                            exchange [cardinality: 0.0, op-cost: 0.0, total-cost: 0.0]
+                                                            -- STATE_RELEASE (ONE_TO_ONE_EXCHANGE)  |PARTITIONED|
+                                                              fixed-point [$COPY_OF(k,6) <- ($COPY_OF(k,2),$COPY_OF(k,4)) $COPY_OF(person2,3) <- ($COPY_OF(person1,2),$COPY_OF(#3,1))] {
+                                                                        exchange [cardinality: 0.0, op-cost: 0.0, total-cost: 0.0]
+                                                                        -- STATE_RELEASE (ONE_TO_ONE_EXCHANGE)  |PARTITIONED|
+                                                                          project ([$COPY_OF(k,4), $COPY_OF(#3,1), $$866]) [cardinality: 0.0, op-cost: 0.0, total-cost: 0.0]
+                                                                          -- STATE_RELEASE (STREAM_PROJECT)  |PARTITIONED|
+                                                                            distinct ([$$866, $$871, abs($$925)]) [cardinality: 0.0, op-cost: 0.0, total-cost: 0.0]
+                                                                            -- STATE_RELEASE (LOCAL_TOP_K)  |PARTITIONED|
+                                                                              exchange [cardinality: 0.0, op-cost: 0.0, total-cost: 0.0]
+                                                                              -- STATE_RELEASE (HASH_PARTITION_EXCHANGE [$$866, $$871])  |PARTITIONED|
+                                                                                assign [$$925] <- [get-item($$928, 0)] [cardinality: 0.0, op-cost: 0.0, total-cost: 0.0]
+                                                                                -- STATE_RELEASE (ASSIGN)  |PARTITIONED|
+                                                                                  subplan {
+                                                                                            aggregate [$$928] <- [listify($$931)] [cardinality: 0.0, op-cost: 0.0, total-cost: 0.0]
+                                                                                            -- AGGREGATE  |LOCAL|
+                                                                                              aggregate [$$931] <- [agg-sql-sum($$932)] [cardinality: 0.0, op-cost: 0.0, total-cost: 0.0]
+                                                                                              -- AGGREGATE  |LOCAL|
+                                                                                                assign [$$932] <- [$$933.getField(2)] [cardinality: 0.0, op-cost: 0.0, total-cost: 0.0]
+                                                                                                -- ASSIGN  |LOCAL|
+                                                                                                  unnest $$933 <- scan-collection($$930.getField(1)) [cardinality: 0.0, op-cost: 0.0, total-cost: 0.0]
+                                                                                                  -- UNNEST  |LOCAL|
+                                                                                                    nested tuple source [cardinality: 0.0, op-cost: 0.0, total-cost: 0.0]
+                                                                                                    -- NESTED_TUPLE_SOURCE  |LOCAL|
+                                                                                         } [cardinality: 0.0, op-cost: 0.0, total-cost: 0.0]
+                                                                                  -- STATE_RELEASE (SUBPLAN)  |PARTITIONED|
+                                                                                    assign [$$930] <- [translate-forward-path($COPY_OF(k,4))] [cardinality: 0.0, op-cost: 0.0, total-cost: 0.0]
+                                                                                    -- STATE_RELEASE (ASSIGN)  |PARTITIONED|
+                                                                                      assign [$COPY_OF(k,4)] <- [append-to-existing-path($COPY_OF(#3,1), $$793, $COPY_OF(k,3))] [cardinality: 0.0, op-cost: 0.0, total-cost: 0.0]
+                                                                                      -- STATE_RELEASE (ASSIGN)  |PARTITIONED|
+                                                                                        select (is-distinct-everything($COPY_OF(#3,1), $$793, $COPY_OF(k,3))) [cardinality: 0.0, op-cost: 0.0, total-cost: 0.0]
+                                                                                        -- STATE_RELEASE (STREAM_SELECT)  |PARTITIONED|
+                                                                                          exchange [cardinality: 0.0, op-cost: 0.0, total-cost: 0.0]
+                                                                                          -- STATE_RELEASE (ONE_TO_ONE_EXCHANGE)  |PARTITIONED|
+                                                                                            join (eq($$startId, $$887)) [cardinality: 0.0, op-cost: 0.0, total-cost: 0.0]
+                                                                                            -- PERSISTENT_BUILD_JOIN [$$887][$$startId]  |PARTITIONED|
+                                                                                              exchange [cardinality: 0.0, op-cost: 0.0, total-cost: 0.0]
+                                                                                              -- STATE_RELEASE (HASH_PARTITION_EXCHANGE [$$887])  |PARTITIONED|
+                                                                                                assign [$$887] <- [$#2.getField(0)] [cardinality: 0.0, op-cost: 0.0, total-cost: 0.0]
+                                                                                                -- STATE_RELEASE (ASSIGN)  |PARTITIONED|
+                                                                                                  recursive-tail [$COPY_OF(k,3) <- ($COPY_OF(k,2),$COPY_OF(k,6)), $#2 <- ($COPY_OF(person1,2),$COPY_OF(person2,3))] [cardinality: 0.0, op-cost: 0.0, total-cost: 0.0]
+                                                                                                  -- RECURSIVE_TAIL  |PARTITIONED|
+                                                                                              exchange [cardinality: 0.0, op-cost: 0.0, total-cost: 0.0]
+                                                                                              -- HASH_PARTITION_EXCHANGE [$$startId]  |PARTITIONED|
+                                                                                                select (true) [cardinality: 0.0, op-cost: 0.0, total-cost: 0.0]
+                                                                                                -- STREAM_SELECT  |PARTITIONED|
+                                                                                                  exchange [cardinality: 0.0, op-cost: 0.0, total-cost: 0.0]
+                                                                                                  -- ONE_TO_ONE_EXCHANGE  |PARTITIONED|
+                                                                                                    join (eq($$871, $$endId)) [cardinality: 0.0, op-cost: 0.0, total-cost: 0.0]
+                                                                                                    -- HYBRID_HASH_JOIN [$$endId][$$871]  |PARTITIONED|
+                                                                                                      exchange [cardinality: 0.0, op-cost: 0.0, total-cost: 0.0]
+                                                                                                      -- HASH_PARTITION_EXCHANGE [$$endId]  |PARTITIONED|
+                                                                                                        assign [$$793] <- [{"startId": $$startId, "endId": $$endId, "weight": $$918}] [cardinality: 0.0, op-cost: 0.0, total-cost: 0.0]
+                                                                                                        -- ASSIGN  |PARTITIONED|
+                                                                                                          assign [$$918] <- [numeric-add($$w1, $$w2)] [cardinality: 0.0, op-cost: 0.0, total-cost: 0.0]
+                                                                                                          -- ASSIGN  |PARTITIONED|
+                                                                                                            assign [$$w2] <- [numeric-multiply(get-item($$788, 0), 0.5)] [cardinality: 0.0, op-cost: 0.0, total-cost: 0.0]
+                                                                                                            -- ASSIGN  |PARTITIONED|
+                                                                                                              subplan {
+                                                                                                                        aggregate [$$788] <- [listify($$878)] [cardinality: 0.0, op-cost: 0.0, total-cost: 0.0]
+                                                                                                                        -- AGGREGATE  |LOCAL|
+                                                                                                                          aggregate [$$878] <- [agg-sql-count(1)] [cardinality: 0.0, op-cost: 0.0, total-cost: 0.0]
+                                                                                                                          -- AGGREGATE  |LOCAL|
+                                                                                                                            select (or(not($$896), not($$897))) [cardinality: 0.0, op-cost: 0.0, total-cost: 0.0]
+                                                                                                                            -- STREAM_SELECT  |LOCAL|
+                                                                                                                              assign [$$896] <- [$$907.getField(12)] [cardinality: 0.0, op-cost: 0.0, total-cost: 0.0]
+                                                                                                                              -- ASSIGN  |LOCAL|
+                                                                                                                                assign [$$907, $$897] <- [$$g.getField(1), $$906.getField(12)] [cardinality: 0.0, op-cost: 0.0, total-cost: 0.0]
+                                                                                                                                -- ASSIGN  |LOCAL|
+                                                                                                                                  assign [$$906] <- [$$g.getField(2)] [cardinality: 0.0, op-cost: 0.0, total-cost: 0.0]
+                                                                                                                                  -- ASSIGN  |LOCAL|
+                                                                                                                                    unnest $$g <- scan-collection($$761) [cardinality: 0.0, op-cost: 0.0, total-cost: 0.0]
+                                                                                                                                    -- UNNEST  |LOCAL|
+                                                                                                                                      nested tuple source [cardinality: 0.0, op-cost: 0.0, total-cost: 0.0]
+                                                                                                                                      -- NESTED_TUPLE_SOURCE  |LOCAL|
+                                                                                                                     } [cardinality: 0.0, op-cost: 0.0, total-cost: 0.0]
+                                                                                                              -- SUBPLAN  |PARTITIONED|
+                                                                                                                assign [$$w1] <- [get-item($$773, 0)] [cardinality: 0.0, op-cost: 0.0, total-cost: 0.0]
+                                                                                                                -- ASSIGN  |PARTITIONED|
+                                                                                                                  exchange [cardinality: 0.0, op-cost: 0.0, total-cost: 0.0]
+                                                                                                                  -- ONE_TO_ONE_EXCHANGE  |PARTITIONED|
+                                                                                                                    group by ([$$startId := $$873; $$endId := $$874]) decor ([]) {
+                                                                                                                              aggregate [$$761] <- [listify($$758)] [cardinality: 0.0, op-cost: 0.0, total-cost: 0.0]
+                                                                                                                              -- AGGREGATE  |LOCAL|
+                                                                                                                                nested tuple source [cardinality: 0.0, op-cost: 0.0, total-cost: 0.0]
+                                                                                                                                -- NESTED_TUPLE_SOURCE  |LOCAL|
+                                                                                                                           }
+                                                                                                                           {
+                                                                                                                              aggregate [$$773] <- [listify($$877)] [cardinality: 0.0, op-cost: 0.0, total-cost: 0.0]
+                                                                                                                              -- AGGREGATE  |LOCAL|
+                                                                                                                                aggregate [$$877] <- [agg-sql-count(1)] [cardinality: 0.0, op-cost: 0.0, total-cost: 0.0]
+                                                                                                                                -- AGGREGATE  |LOCAL|
+                                                                                                                                  select (or($$894, $$895)) [cardinality: 0.0, op-cost: 0.0, total-cost: 0.0]
+                                                                                                                                  -- STREAM_SELECT  |LOCAL|
+                                                                                                                                    nested tuple source [cardinality: 0.0, op-cost: 0.0, total-cost: 0.0]
+                                                                                                                                    -- NESTED_TUPLE_SOURCE  |LOCAL|
+                                                                                                                           } [cardinality: 0.0, op-cost: 0.0, total-cost: 0.0]
+                                                                                                                    -- PRE_CLUSTERED_GROUP_BY[$$873, $$874]  |PARTITIONED|
+                                                                                                                      exchange [cardinality: 0.0, op-cost: 0.0, total-cost: 0.0]
+                                                                                                                      -- ONE_TO_ONE_EXCHANGE  |PARTITIONED|
+                                                                                                                        order (ASC, $$873) (ASC, $$874) [cardinality: 0.0, op-cost: 0.0, total-cost: 0.0]
+                                                                                                                        -- STABLE_SORT [$$873(ASC), $$874(ASC)]  |PARTITIONED|
+                                                                                                                          exchange [cardinality: 0.0, op-cost: 0.0, total-cost: 0.0]
+                                                                                                                          -- ONE_TO_ONE_EXCHANGE  |PARTITIONED|
+                                                                                                                            assign [$$895, $$894, $$758] <- [$$m2.getField(12), $$m1.getField(12), {"k": $$k, "m1": $$m1, "m2": $$m2}] [cardinality: 0.0, op-cost: 0.0, total-cost: 0.0]
+                                                                                                                            -- ASSIGN  |PARTITIONED|
+                                                                                                                              exchange [cardinality: 0.0, op-cost: 0.0, total-cost: 0.0]
+                                                                                                                              -- ONE_TO_ONE_EXCHANGE  |PARTITIONED|
+                                                                                                                                join (and(eq($$869, $$873), eq($$870, $$874))) [cardinality: 0.0, op-cost: 0.0, total-cost: 0.0]
+                                                                                                                                -- HYBRID_HASH_JOIN [$$873, $$874][$$869, $$870]  |PARTITIONED|
+                                                                                                                                  exchange [cardinality: 0.0, op-cost: 0.0, total-cost: 0.0]
+                                                                                                                                  -- HASH_PARTITION_EXCHANGE [$$873, $$874]  |PARTITIONED|
+                                                                                                                                    join (or(eq($$890, $$868), eq($$892, $$867))) [cardinality: 0.0, op-cost: 0.0, total-cost: 0.0]
+                                                                                                                                    -- NESTED_LOOP  |PARTITIONED|
+                                                                                                                                      exchange [cardinality: 0.0, op-cost: 0.0, total-cost: 0.0]
+                                                                                                                                      -- ONE_TO_ONE_EXCHANGE  |PARTITIONED|
+                                                                                                                                        assign [$$873, $$890] <- [$$m1.getField(8), $$m1.getField(11)] [cardinality: 0.0, op-cost: 0.0, total-cost: 0.0]
+                                                                                                                                        -- ASSIGN  |PARTITIONED|
+                                                                                                                                          exchange [cardinality: 0.0, op-cost: 0.0, total-cost: 0.0]
+                                                                                                                                          -- ONE_TO_ONE_EXCHANGE  |PARTITIONED|
+                                                                                                                                            data-scan []<-[$$867, $$m1] <- SNB.Native.Messages [cardinality: 0.0, op-cost: 0.0, total-cost: 0.0]
+                                                                                                                                            -- DATASOURCE_SCAN  |PARTITIONED|
+                                                                                                                                              exchange [cardinality: 0.0, op-cost: 0.0, total-cost: 0.0]
+                                                                                                                                              -- ONE_TO_ONE_EXCHANGE  |PARTITIONED|
+                                                                                                                                                empty-tuple-source [cardinality: 0.0, op-cost: 0.0, total-cost: 0.0]
+                                                                                                                                                -- EMPTY_TUPLE_SOURCE  |PARTITIONED|
+                                                                                                                                      exchange [cardinality: 0.0, op-cost: 0.0, total-cost: 0.0]
+                                                                                                                                      -- BROADCAST_EXCHANGE  |PARTITIONED|
+                                                                                                                                        assign [$$874, $$892] <- [$$m2.getField(8), $$m2.getField(11)] [cardinality: 0.0, op-cost: 0.0, total-cost: 0.0]
+                                                                                                                                        -- ASSIGN  |PARTITIONED|
+                                                                                                                                          exchange [cardinality: 0.0, op-cost: 0.0, total-cost: 0.0]
+                                                                                                                                          -- ONE_TO_ONE_EXCHANGE  |PARTITIONED|
+                                                                                                                                            data-scan []<-[$$868, $$m2] <- SNB.Native.Messages [cardinality: 0.0, op-cost: 0.0, total-cost: 0.0]
+                                                                                                                                            -- DATASOURCE_SCAN  |PARTITIONED|
+                                                                                                                                              exchange [cardinality: 0.0, op-cost: 0.0, total-cost: 0.0]
+                                                                                                                                              -- ONE_TO_ONE_EXCHANGE  |PARTITIONED|
+                                                                                                                                                empty-tuple-source [cardinality: 0.0, op-cost: 0.0, total-cost: 0.0]
+                                                                                                                                                -- EMPTY_TUPLE_SOURCE  |PARTITIONED|
+                                                                                                                                  exchange [cardinality: 0.0, op-cost: 0.0, total-cost: 0.0]
+                                                                                                                                  -- HASH_PARTITION_EXCHANGE [$$869, $$870]  |PARTITIONED|
+                                                                                                                                    data-scan []<-[$$869, $$870, $$k] <- SNB.Native.Knows [cardinality: 0.0, op-cost: 0.0, total-cost: 0.0]
+                                                                                                                                    -- DATASOURCE_SCAN  |PARTITIONED|
+                                                                                                                                      exchange [cardinality: 0.0, op-cost: 0.0, total-cost: 0.0]
+                                                                                                                                      -- ONE_TO_ONE_EXCHANGE  |PARTITIONED|
+                                                                                                                                        empty-tuple-source [cardinality: 0.0, op-cost: 0.0, total-cost: 0.0]
+                                                                                                                                        -- EMPTY_TUPLE_SOURCE  |PARTITIONED|
+                                                                                                      exchange [cardinality: 0.0, op-cost: 0.0, total-cost: 0.0]
+                                                                                                      -- HASH_PARTITION_EXCHANGE [$$871]  |PARTITIONED|
+                                                                                                        data-scan []<-[$$871, $COPY_OF(#3,1)] <- SNB.Native.Persons [cardinality: 0.0, op-cost: 0.0, total-cost: 0.0]
+                                                                                                        -- DATASOURCE_SCAN  |PARTITIONED|
+                                                                                                          exchange [cardinality: 0.0, op-cost: 0.0, total-cost: 0.0]
+                                                                                                          -- ONE_TO_ONE_EXCHANGE  |PARTITIONED|
+                                                                                                            empty-tuple-source [cardinality: 0.0, op-cost: 0.0, total-cost: 0.0]
+                                                                                                            -- EMPTY_TUPLE_SOURCE  |PARTITIONED|
+                                                                     } [cardinality: 0.0, op-cost: 0.0, total-cost: 0.0]
+                                                              -- FIXED_POINT  |PARTITIONED|
+                                                                exchange [cardinality: 0.0, op-cost: 0.0, total-cost: 0.0]
+                                                                -- ONE_TO_ONE_EXCHANGE  |PARTITIONED|
+                                                                  project ([$COPY_OF(k,2), $COPY_OF(person1,2), $$866]) [cardinality: 0.0, op-cost: 0.0, total-cost: 0.0]
+                                                                  -- STREAM_PROJECT  |PARTITIONED|
+                                                                    assign [$COPY_OF(k,2)] <- [create-new-zero-hop-path($COPY_OF(person1,2))] [cardinality: 0.0, op-cost: 0.0, total-cost: 0.0]
+                                                                    -- ASSIGN  |PARTITIONED|
+                                                                      exchange [cardinality: 0.0, op-cost: 0.0, total-cost: 0.0]
+                                                                      -- ONE_TO_ONE_EXCHANGE  |PARTITIONED|
+                                                                        unnest-map [$$866, $COPY_OF(person1,2)] <- index-search("Persons", 0, "SNB/Native", "Persons", false, false, 1, $$936, 1, $$937, true, true, true) [cardinality: 0.0, op-cost: 0.0, total-cost: 0.0]
+                                                                        -- BTREE_SEARCH  |PARTITIONED|
+                                                                          exchange [cardinality: 0.0, op-cost: 0.0, total-cost: 0.0]
+                                                                          -- ONE_TO_ONE_EXCHANGE  |PARTITIONED|
+                                                                            assign [$$936, $$937] <- [14, 14] [cardinality: 0.0, op-cost: 0.0, total-cost: 0.0]
+                                                                            -- ASSIGN  |PARTITIONED|
+                                                                              empty-tuple-source [cardinality: 0.0, op-cost: 0.0, total-cost: 0.0]
+                                                                              -- EMPTY_TUPLE_SOURCE  |PARTITIONED|
+                                          exchange [cardinality: 0.0, op-cost: 0.0, total-cost: 0.0]
+                                          -- HASH_PARTITION_EXCHANGE [$$872]  |PARTITIONED|
+                                            project ([$$872]) [cardinality: 0.0, op-cost: 0.0, total-cost: 0.0]
+                                            -- STREAM_PROJECT  |PARTITIONED|
+                                              exchange [cardinality: 0.0, op-cost: 0.0, total-cost: 0.0]
+                                              -- ONE_TO_ONE_EXCHANGE  |PARTITIONED|
+                                                unnest-map [$$872, $COPY_OF(person2,5)] <- index-search("Persons", 0, "SNB/Native", "Persons", false, false, 1, $$940, 1, $$941, true, true, true) [cardinality: 0.0, op-cost: 0.0, total-cost: 0.0]
+                                                -- BTREE_SEARCH  |PARTITIONED|
+                                                  exchange [cardinality: 0.0, op-cost: 0.0, total-cost: 0.0]
+                                                  -- ONE_TO_ONE_EXCHANGE  |PARTITIONED|
+                                                    assign [$$940, $$941] <- [6597069766702, 6597069766702] [cardinality: 0.0, op-cost: 0.0, total-cost: 0.0]
+                                                    -- ASSIGN  |PARTITIONED|
+                                                      empty-tuple-source [cardinality: 0.0, op-cost: 0.0, total-cost: 0.0]
+                                                      -- EMPTY_TUPLE_SOURCE  |PARTITIONED|

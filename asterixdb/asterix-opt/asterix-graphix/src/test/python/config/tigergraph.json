@@ -1,0 +1,152 @@
+{
+  "workload": [
+    {
+      "queryFile": "complex-2.cypher",
+      "parameterFiles": [
+        "interactive-2.parquet"
+      ],
+      "repeat": 25,
+      "timeout": 360
+    },
+    {
+      "queryFile": "complex-4.cypher",
+      "parameterFiles": [
+        "interactive-4.parquet"
+      ],
+      "repeat": 25,
+      "timeout": 360
+    },
+    {
+      "queryFile": "complex-7.cypher",
+      "parameterFiles": [
+        "interactive-7.parquet"
+      ],
+      "repeat": 25,
+      "timeout": 360
+    },
+    {
+      "queryFile": "complex-8.cypher",
+      "parameterFiles": [
+        "interactive-8.parquet"
+      ],
+      "repeat": 25,
+      "timeout": 360
+    },
+    {
+      "queryFile": "short-1.cypher",
+      "parameterFiles": [
+        "interactive-personId.parquet"
+      ],
+      "repeat": 50,
+      "timeout": 180
+    },
+    {
+      "queryFile": "short-3.cypher",
+      "parameterFiles": [
+        "interactive-personId.parquet"
+      ],
+      "repeat": 50,
+      "timeout": 180
+    },
+    {
+      "queryFile": "short-4.cypher",
+      "parameterFiles": [
+        "interactive-messageId.parquet"
+      ],
+      "repeat": 50,
+      "timeout": 180
+    },
+    {
+      "queryFile": "short-5.cypher",
+      "parameterFiles": [
+        "interactive-messageId.parquet"
+      ],
+      "repeat": 50,
+      "timeout": 180
+    },
+    {
+      "queryFile": "short-7.cypher",
+      "parameterFiles": [
+        "interactive-messageId.parquet"
+      ],
+      "repeat": 50,
+      "timeout": 180
+    },
+    {
+      "queryFile": "bi-1.cypher",
+      "parameterFiles": [
+        "bi-1.csv"
+      ],
+      "repeat": 10,
+      "timeout": 10800
+    },
+    {
+      "queryFile": "bi-2.cypher",
+      "parameterFiles": [
+        "bi-2a.csv",
+        "bi-2b.csv"
+      ],
+      "repeat": 10,
+      "timeout": 10800
+    },
+    {
+      "queryFile": "bi-5.cypher",
+      "parameterFiles": [
+        "bi-5.csv"
+      ],
+      "repeat": 10,
+      "timeout": 10800
+    },
+    {
+      "queryFile": "bi-7.cypher",
+      "parameterFiles": [
+        "bi-7.csv"
+      ],
+      "repeat": 10,
+      "timeout": 10800
+    },
+    {
+      "queryFile": "bi-8.cypher",
+      "parameterFiles": [
+        "bi-8a.csv",
+        "bi-8b.csv"
+      ],
+      "repeat": 10,
+      "timeout": 10800
+    },
+    {
+      "queryFile": "bi-11.cypher",
+      "parameterFiles": [
+        "bi-11.csv"
+      ],
+      "repeat": 10,
+      "timeout": 10800
+    },
+    {
+      "queryFile": "bi-14.cypher",
+      "parameterFiles": [
+        "bi-14a.csv",
+        "bi-14b.csv"
+      ],
+      "repeat": 10,
+      "timeout": 10800
+    },
+    {
+      "queryFile": "bi-16.cypher",
+      "parameterFiles": [
+        "bi-16a.csv",
+        "bi-16b.csv"
+      ],
+      "repeat": 10,
+      "timeout": 10800
+    },
+    {
+      "queryFile": "bi-18.cypher",
+      "parameterFiles": [
+        "bi-18.csv"
+      ],
+      "repeat": 10,
+      "timeout": 10800
+    }
+  ]
+}

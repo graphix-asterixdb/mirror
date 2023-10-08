@@ -1,0 +1,30 @@
+distribute result [$$128]
+-- DISTRIBUTE_RESULT  |PARTITIONED|
+  exchange
+  -- ONE_TO_ONE_EXCHANGE  |PARTITIONED|
+    project ([$$128])
+    -- STREAM_PROJECT  |PARTITIONED|
+      assign [$$128] <- [{"u1": $COPY_OF(u1,1), "r": $COPY_OF(r,1)}]
+      -- ASSIGN  |PARTITIONED|
+        project ([$COPY_OF(r,1), $COPY_OF(u1,1)])
+        -- STREAM_PROJECT  |PARTITIONED|
+          exchange
+          -- ONE_TO_ONE_EXCHANGE  |PARTITIONED|
+            unnest-map [$$131, $COPY_OF(u1,1)] <- index-search("Users", 0, "Yelp", "Users", true, true, 1, $$130, 1, $$130, true, true, true)
+            -- BTREE_SEARCH  |PARTITIONED|
+              exchange
+              -- ONE_TO_ONE_EXCHANGE  |PARTITIONED|
+                order (ASC, $$130)
+                -- STABLE_SORT [$$130(ASC)]  |PARTITIONED|
+                  exchange
+                  -- HASH_PARTITION_EXCHANGE [$$130]  |PARTITIONED|
+                    project ([$$130, $COPY_OF(r,1)])
+                    -- STREAM_PROJECT  |PARTITIONED|
+                      exchange
+                      -- ONE_TO_ONE_EXCHANGE  |PARTITIONED|
+                        data-scan []<-[$$129, $$130, $COPY_OF(r,1)] <- Yelp.Reviews
+                        -- DATASOURCE_SCAN  |PARTITIONED|
+                          exchange
+                          -- ONE_TO_ONE_EXCHANGE  |PARTITIONED|
+                            empty-tuple-source
+                            -- EMPTY_TUPLE_SOURCE  |PARTITIONED|

@@ -1,0 +1,38 @@
+{ "u1_user_id": 1, "u2_user_id": 2, "f_user_id": 3, "k1_ids": [ 1, 2, 3 ], "k2_ids": [ 2, 3 ] }
+{ "u1_user_id": 1, "u2_user_id": 2, "f_user_id": 3, "k1_ids": [ 1, 3 ], "k2_ids": [ 2, 3 ] }
+{ "u1_user_id": 1, "u2_user_id": 2, "f_user_id": 4, "k1_ids": [ 1, 2, 3, 4 ], "k2_ids": [ 2, 3, 4 ] }
+{ "u1_user_id": 1, "u2_user_id": 2, "f_user_id": 4, "k1_ids": [ 1, 3, 4 ], "k2_ids": [ 2, 3, 4 ] }
+{ "u1_user_id": 1, "u2_user_id": 3, "f_user_id": 2, "k1_ids": [ 1, 2 ], "k2_ids": [ 3, 4, 1, 2 ] }
+{ "u1_user_id": 1, "u2_user_id": 3, "f_user_id": 4, "k1_ids": [ 1, 2, 3, 4 ], "k2_ids": [ 3, 4 ] }
+{ "u1_user_id": 1, "u2_user_id": 3, "f_user_id": 4, "k1_ids": [ 1, 3, 4 ], "k2_ids": [ 3, 4 ] }
+{ "u1_user_id": 1, "u2_user_id": 4, "f_user_id": 2, "k1_ids": [ 1, 2 ], "k2_ids": [ 4, 1, 2 ] }
+{ "u1_user_id": 1, "u2_user_id": 4, "f_user_id": 3, "k1_ids": [ 1, 2, 3 ], "k2_ids": [ 4, 1, 2, 3 ] }
+{ "u1_user_id": 1, "u2_user_id": 4, "f_user_id": 3, "k1_ids": [ 1, 2, 3 ], "k2_ids": [ 4, 1, 3 ] }
+{ "u1_user_id": 1, "u2_user_id": 4, "f_user_id": 3, "k1_ids": [ 1, 3 ], "k2_ids": [ 4, 1, 2, 3 ] }
+{ "u1_user_id": 1, "u2_user_id": 4, "f_user_id": 3, "k1_ids": [ 1, 3 ], "k2_ids": [ 4, 1, 3 ] }
+{ "u1_user_id": 2, "u2_user_id": 1, "f_user_id": 3, "k1_ids": [ 2, 3 ], "k2_ids": [ 1, 2, 3 ] }
+{ "u1_user_id": 2, "u2_user_id": 1, "f_user_id": 3, "k1_ids": [ 2, 3 ], "k2_ids": [ 1, 3 ] }
+{ "u1_user_id": 2, "u2_user_id": 1, "f_user_id": 4, "k1_ids": [ 2, 3, 4 ], "k2_ids": [ 1, 2, 3, 4 ] }
+{ "u1_user_id": 2, "u2_user_id": 1, "f_user_id": 4, "k1_ids": [ 2, 3, 4 ], "k2_ids": [ 1, 3, 4 ] }
+{ "u1_user_id": 2, "u2_user_id": 3, "f_user_id": 1, "k1_ids": [ 2, 3, 4, 1 ], "k2_ids": [ 3, 4, 1 ] }
+{ "u1_user_id": 2, "u2_user_id": 3, "f_user_id": 4, "k1_ids": [ 2, 3, 4 ], "k2_ids": [ 3, 4 ] }
+{ "u1_user_id": 2, "u2_user_id": 4, "f_user_id": 1, "k1_ids": [ 2, 3, 4, 1 ], "k2_ids": [ 4, 1 ] }
+{ "u1_user_id": 2, "u2_user_id": 4, "f_user_id": 3, "k1_ids": [ 2, 3 ], "k2_ids": [ 4, 1, 2, 3 ] }
+{ "u1_user_id": 2, "u2_user_id": 4, "f_user_id": 3, "k1_ids": [ 2, 3 ], "k2_ids": [ 4, 1, 3 ] }
+{ "u1_user_id": 3, "u2_user_id": 1, "f_user_id": 2, "k1_ids": [ 3, 4, 1, 2 ], "k2_ids": [ 1, 2 ] }
+{ "u1_user_id": 3, "u2_user_id": 1, "f_user_id": 4, "k1_ids": [ 3, 4 ], "k2_ids": [ 1, 2, 3, 4 ] }
+{ "u1_user_id": 3, "u2_user_id": 1, "f_user_id": 4, "k1_ids": [ 3, 4 ], "k2_ids": [ 1, 3, 4 ] }
+{ "u1_user_id": 3, "u2_user_id": 2, "f_user_id": 1, "k1_ids": [ 3, 4, 1 ], "k2_ids": [ 2, 3, 4, 1 ] }
+{ "u1_user_id": 3, "u2_user_id": 2, "f_user_id": 4, "k1_ids": [ 3, 4 ], "k2_ids": [ 2, 3, 4 ] }
+{ "u1_user_id": 3, "u2_user_id": 4, "f_user_id": 1, "k1_ids": [ 3, 4, 1 ], "k2_ids": [ 4, 1 ] }
+{ "u1_user_id": 3, "u2_user_id": 4, "f_user_id": 2, "k1_ids": [ 3, 4, 1, 2 ], "k2_ids": [ 4, 1, 2 ] }
+{ "u1_user_id": 4, "u2_user_id": 1, "f_user_id": 2, "k1_ids": [ 4, 1, 2 ], "k2_ids": [ 1, 2 ] }
+{ "u1_user_id": 4, "u2_user_id": 1, "f_user_id": 3, "k1_ids": [ 4, 1, 2, 3 ], "k2_ids": [ 1, 2, 3 ] }
+{ "u1_user_id": 4, "u2_user_id": 1, "f_user_id": 3, "k1_ids": [ 4, 1, 2, 3 ], "k2_ids": [ 1, 3 ] }
+{ "u1_user_id": 4, "u2_user_id": 1, "f_user_id": 3, "k1_ids": [ 4, 1, 3 ], "k2_ids": [ 1, 2, 3 ] }
+{ "u1_user_id": 4, "u2_user_id": 1, "f_user_id": 3, "k1_ids": [ 4, 1, 3 ], "k2_ids": [ 1, 3 ] }
+{ "u1_user_id": 4, "u2_user_id": 2, "f_user_id": 1, "k1_ids": [ 4, 1 ], "k2_ids": [ 2, 3, 4, 1 ] }
+{ "u1_user_id": 4, "u2_user_id": 2, "f_user_id": 3, "k1_ids": [ 4, 1, 2, 3 ], "k2_ids": [ 2, 3 ] }
+{ "u1_user_id": 4, "u2_user_id": 2, "f_user_id": 3, "k1_ids": [ 4, 1, 3 ], "k2_ids": [ 2, 3 ] }
+{ "u1_user_id": 4, "u2_user_id": 3, "f_user_id": 1, "k1_ids": [ 4, 1 ], "k2_ids": [ 3, 4, 1 ] }
+{ "u1_user_id": 4, "u2_user_id": 3, "f_user_id": 2, "k1_ids": [ 4, 1, 2 ], "k2_ids": [ 3, 4, 1, 2 ] }

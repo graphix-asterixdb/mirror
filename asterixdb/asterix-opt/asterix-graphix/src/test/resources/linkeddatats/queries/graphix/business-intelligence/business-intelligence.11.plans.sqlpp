@@ -1,0 +1,50 @@
+/*
+ * Licensed to the Apache Software Foundation (ASF) under one
+ * or more contributor license agreements.  See the NOTICE file
+ * distributed with this work for additional information
+ * regarding copyright ownership.  The ASF licenses this file
+ * to you under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance
+ * with the License.  You may obtain a copy of the License at
+ *
+ *   http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing,
+ * software distributed under the License is distributed on an
+ * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ * KIND, either express or implied.  See the License for the
+ * specific language governing permissions and limitations
+ * under the License.
+ */
+SET `graphix.semantics.pattern` "homomorphism";
+
+-- param compile-only:string=true
+-- param optimized-logical-plan:string=true
+-- param plan-format:string=string
+
+EXPLAIN
+FROM
+    (
+        FROM
+            GRAPH SNB.Native.SNBGraph
+                (a:Person)-[k1:KNOWS]->(b:Person)-[k2:KNOWS]->(c:Person),
+                (a)-[:IS_LOCATED_IN]->(:City)-[:IS_PART_OF]->(country:Country),
+                (b)-[:IS_LOCATED_IN]->(:City)-[:IS_PART_OF]->(country),
+                (c)-[:IS_LOCATED_IN]->(:City)-[:IS_PART_OF]->(country),
+                (c)-[k3:KNOWS]->(a)
+        WHERE
+            country.name = "China" AND
+            a.id < b.id AND
+            b.id < c.id AND
+            ( k1.creationDate BETWEEN DATETIME("2012-12-15T00:00:00.000Z") AND DATETIME("2013-03-17T00:00:00.000Z") ) AND
+            ( k2.creationDate BETWEEN DATETIME("2012-12-15T00:00:00.000Z") AND DATETIME("2013-03-17T00:00:00.000Z") ) AND
+            ( k3.creationDate BETWEEN DATETIME("2012-12-15T00:00:00.000Z") AND DATETIME("2013-03-17T00:00:00.000Z") )
+        GROUP BY
+            a.id AS aid,
+            b.id AS bid,
+            c.id AS cid
+        SELECT
+            1
+    ) AS g
+SELECT
+    COUNT(g) AS `count`;

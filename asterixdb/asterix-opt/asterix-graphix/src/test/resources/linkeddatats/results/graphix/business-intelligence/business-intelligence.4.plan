@@ -1,0 +1,342 @@
+distribute result [$$1268] [cardinality: 0.0, op-cost: 0.0, total-cost: 0.0]
+-- DISTRIBUTE_RESULT  |UNPARTITIONED|
+  exchange [cardinality: 0.0, op-cost: 0.0, total-cost: 0.0]
+  -- ONE_TO_ONE_EXCHANGE  |UNPARTITIONED|
+    limit 100 [cardinality: 0.0, op-cost: 0.0, total-cost: 0.0]
+    -- STREAM_LIMIT  |UNPARTITIONED|
+      project ([$$1268]) [cardinality: 0.0, op-cost: 0.0, total-cost: 0.0]
+      -- STREAM_PROJECT  |PARTITIONED|
+        assign [$$1268] <- [{"personId": $#23, "personFirstName": $$1330, "personLastName": $$1331, "creationDate": unix-time-from-datetime-in-ms($$1332), "messageCount": $$1300}] [cardinality: 0.0, op-cost: 0.0, total-cost: 0.0]
+        -- ASSIGN  |PARTITIONED|
+          exchange [cardinality: 0.0, op-cost: 0.0, total-cost: 0.0]
+          -- SORT_MERGE_EXCHANGE [$$1300(DESC), $#23(ASC) ]  |PARTITIONED|
+            limit 100 [cardinality: 0.0, op-cost: 0.0, total-cost: 0.0]
+            -- STREAM_LIMIT  |PARTITIONED|
+              exchange [cardinality: 0.0, op-cost: 0.0, total-cost: 0.0]
+              -- ONE_TO_ONE_EXCHANGE  |PARTITIONED|
+                order (topK: 100) (DESC, $$1300) (ASC, $#23) [cardinality: 0.0, op-cost: 0.0, total-cost: 0.0]
+                -- STABLE_SORT [topK: 100] [$$1300(DESC), $#23(ASC)]  |PARTITIONED|
+                  exchange [cardinality: 0.0, op-cost: 0.0, total-cost: 0.0]
+                  -- ONE_TO_ONE_EXCHANGE  |PARTITIONED|
+                    project ([$#23, $$1330, $$1331, $$1332, $$1300]) [cardinality: 0.0, op-cost: 0.0, total-cost: 0.0]
+                    -- STREAM_PROJECT  |PARTITIONED|
+                      assign [$$1332, $$1331, $$1330, $#23] <- [$$person.getField(5), $$person.getField(2), $$person.getField(1), $$person.getField(0)] [cardinality: 0.0, op-cost: 0.0, total-cost: 0.0]
+                      -- ASSIGN  |PARTITIONED|
+                        exchange [cardinality: 0.0, op-cost: 0.0, total-cost: 0.0]
+                        -- ONE_TO_ONE_EXCHANGE  |PARTITIONED|
+                          group by ([$$person := $COPY_OF(person,1)]) decor ([]) {
+                                    aggregate [$$1300] <- [agg-sql-count($$1364)] [cardinality: 0.0, op-cost: 0.0, total-cost: 0.0]
+                                    -- AGGREGATE  |LOCAL|
+                                      distinct ([$$1364]) [cardinality: 0.0, op-cost: 0.0, total-cost: 0.0]
+                                      -- MICRO_PRE_SORTED_DISTINCT_BY  |LOCAL|
+                                        order (ASC, $$1364) [cardinality: 0.0, op-cost: 0.0, total-cost: 0.0]
+                                        -- MICRO_STABLE_SORT [$$1364(ASC)]  |LOCAL|
+                                          nested tuple source [cardinality: 0.0, op-cost: 0.0, total-cost: 0.0]
+                                          -- NESTED_TUPLE_SOURCE  |LOCAL|
+                                 } [cardinality: 0.0, op-cost: 0.0, total-cost: 0.0]
+                          -- PRE_CLUSTERED_GROUP_BY[$COPY_OF(person,1)]  |PARTITIONED|
+                            exchange [cardinality: 0.0, op-cost: 0.0, total-cost: 0.0]
+                            -- ONE_TO_ONE_EXCHANGE  |PARTITIONED|
+                              order (ASC, $COPY_OF(person,1)) [cardinality: 0.0, op-cost: 0.0, total-cost: 0.0]
+                              -- STABLE_SORT [$COPY_OF(person,1)(ASC)]  |PARTITIONED|
+                                exchange [cardinality: 0.0, op-cost: 0.0, total-cost: 0.0]
+                                -- HASH_PARTITION_EXCHANGE [$COPY_OF(person,1)]  |PARTITIONED|
+                                  project ([$$1364, $COPY_OF(person,1)]) [cardinality: 0.0, op-cost: 0.0, total-cost: 0.0]
+                                  -- STREAM_PROJECT  |PARTITIONED|
+                                    select (and(or(eq(optimized-edge-count($COPY_OF(#7,6)), 0), not(eq($$1364, $$1328))), or(is-unknown($COPY_OF(post,5)), not(eq($$1280, $$1323))))) [cardinality: 0.0, op-cost: 0.0, total-cost: 0.0]
+                                    -- STREAM_SELECT  |PARTITIONED|
+                                      project ([$COPY_OF(person,1), $$1280, $$1364, $COPY_OF(#7,6), $$1328, $COPY_OF(post,5), $$1323]) [cardinality: 0.0, op-cost: 0.0, total-cost: 0.0]
+                                      -- STREAM_PROJECT  |PARTITIONED|
+                                        exchange [cardinality: 0.0, op-cost: 0.0, total-cost: 0.0]
+                                        -- ONE_TO_ONE_EXCHANGE  |PARTITIONED|
+                                          left outer join (eq($$1316, $$1282)) [cardinality: 0.0, op-cost: 0.0, total-cost: 0.0]
+                                          -- HYBRID_HASH_JOIN [$$1282][$$1316]  |PARTITIONED|
+                                            exchange [cardinality: 0.0, op-cost: 0.0, total-cost: 0.0]
+                                            -- ONE_TO_ONE_EXCHANGE  |PARTITIONED|
+                                              project ([$COPY_OF(person,1), $$1280, $$1282]) [cardinality: 0.0, op-cost: 0.0, total-cost: 0.0]
+                                              -- STREAM_PROJECT  |PARTITIONED|
+                                                exchange [cardinality: 0.0, op-cost: 0.0, total-cost: 0.0]
+                                                -- ONE_TO_ONE_EXCHANGE  |PARTITIONED|
+                                                  join (eq($$1281, $$1282)) [cardinality: 0.0, op-cost: 0.0, total-cost: 0.0]
+                                                  -- HYBRID_HASH_JOIN [$$1281][$$1282]  |PARTITIONED|
+                                                    exchange [cardinality: 0.0, op-cost: 0.0, total-cost: 0.0]
+                                                    -- HASH_PARTITION_EXCHANGE [$$1281]  |PARTITIONED|
+                                                      project ([$$1280, $$1281]) [cardinality: 0.0, op-cost: 0.0, total-cost: 0.0]
+                                                      -- STREAM_PROJECT  |PARTITIONED|
+                                                        exchange [cardinality: 0.0, op-cost: 0.0, total-cost: 0.0]
+                                                        -- ONE_TO_ONE_EXCHANGE  |PARTITIONED|
+                                                          join (eq($$1139, $$1280)) [cardinality: 0.0, op-cost: 0.0, total-cost: 0.0]
+                                                          -- HYBRID_HASH_JOIN [$$1139][$$1280]  |PARTITIONED|
+                                                            exchange [cardinality: 0.0, op-cost: 0.0, total-cost: 0.0]
+                                                            -- HASH_PARTITION_EXCHANGE [$$1139]  |PARTITIONED|
+                                                              limit 100 [cardinality: 0.0, op-cost: 0.0, total-cost: 0.0]
+                                                              -- STREAM_LIMIT  |UNPARTITIONED|
+                                                                project ([$$1139]) [cardinality: 0.0, op-cost: 0.0, total-cost: 0.0]
+                                                                -- STREAM_PROJECT  |PARTITIONED|
+                                                                  assign [$$1139] <- [$$forum.getField(0)] [cardinality: 0.0, op-cost: 0.0, total-cost: 0.0]
+                                                                  -- ASSIGN  |PARTITIONED|
+                                                                    project ([$$forum]) [cardinality: 0.0, op-cost: 0.0, total-cost: 0.0]
+                                                                    -- STREAM_PROJECT  |PARTITIONED|
+                                                                      exchange [cardinality: 0.0, op-cost: 0.0, total-cost: 0.0]
+                                                                      -- SORT_MERGE_EXCHANGE [$$1299(DESC) ]  |PARTITIONED|
+                                                                        limit 100 [cardinality: 0.0, op-cost: 0.0, total-cost: 0.0]
+                                                                        -- STREAM_LIMIT  |PARTITIONED|
+                                                                          exchange [cardinality: 0.0, op-cost: 0.0, total-cost: 0.0]
+                                                                          -- ONE_TO_ONE_EXCHANGE  |PARTITIONED|
+                                                                            order (DESC, $$1299) [cardinality: 0.0, op-cost: 0.0, total-cost: 0.0]
+                                                                            -- STABLE_SORT [$$1299(DESC)]  |PARTITIONED|
+                                                                              exchange [cardinality: 0.0, op-cost: 0.0, total-cost: 0.0]
+                                                                              -- ONE_TO_ONE_EXCHANGE  |PARTITIONED|
+                                                                                group by ([$$forum := $$1363]) decor ([]) {
+                                                                                          aggregate [$$1299] <- [agg-global-sql-max($$1362)] [cardinality: 0.0, op-cost: 0.0, total-cost: 0.0]
+                                                                                          -- AGGREGATE  |LOCAL|
+                                                                                            nested tuple source [cardinality: 0.0, op-cost: 0.0, total-cost: 0.0]
+                                                                                            -- NESTED_TUPLE_SOURCE  |LOCAL|
+                                                                                       } [cardinality: 0.0, op-cost: 0.0, total-cost: 0.0]
+                                                                                -- SORT_GROUP_BY[$$1363]  |PARTITIONED|
+                                                                                  exchange [cardinality: 0.0, op-cost: 0.0, total-cost: 0.0]
+                                                                                  -- HASH_PARTITION_EXCHANGE [$$1363]  |PARTITIONED|
+                                                                                    group by ([$$1363 := $$forum]) decor ([]) {
+                                                                                              aggregate [$$1362] <- [agg-local-sql-max($$1298)] [cardinality: 0.0, op-cost: 0.0, total-cost: 0.0]
+                                                                                              -- AGGREGATE  |LOCAL|
+                                                                                                nested tuple source [cardinality: 0.0, op-cost: 0.0, total-cost: 0.0]
+                                                                                                -- NESTED_TUPLE_SOURCE  |LOCAL|
+                                                                                           } [cardinality: 0.0, op-cost: 0.0, total-cost: 0.0]
+                                                                                    -- PRE_CLUSTERED_GROUP_BY[$$forum]  |PARTITIONED|
+                                                                                      exchange [cardinality: 0.0, op-cost: 0.0, total-cost: 0.0]
+                                                                                      -- ONE_TO_ONE_EXCHANGE  |PARTITIONED|
+                                                                                        project ([$$1298, $$forum]) [cardinality: 0.0, op-cost: 0.0, total-cost: 0.0]
+                                                                                        -- STREAM_PROJECT  |PARTITIONED|
+                                                                                          exchange [cardinality: 0.0, op-cost: 0.0, total-cost: 0.0]
+                                                                                          -- ONE_TO_ONE_EXCHANGE  |PARTITIONED|
+                                                                                            group by ([$$forum := $$1360; $$country := $$1361]) decor ([]) {
+                                                                                                      aggregate [$$1298] <- [agg-sql-sum($$1359)] [cardinality: 0.0, op-cost: 0.0, total-cost: 0.0]
+                                                                                                      -- AGGREGATE  |LOCAL|
+                                                                                                        nested tuple source [cardinality: 0.0, op-cost: 0.0, total-cost: 0.0]
+                                                                                                        -- NESTED_TUPLE_SOURCE  |LOCAL|
+                                                                                                   } [cardinality: 0.0, op-cost: 0.0, total-cost: 0.0]
+                                                                                            -- SORT_GROUP_BY[$$1360, $$1361]  |PARTITIONED|
+                                                                                              exchange [cardinality: 0.0, op-cost: 0.0, total-cost: 0.0]
+                                                                                              -- HASH_PARTITION_EXCHANGE [$$1360, $$1361]  |PARTITIONED|
+                                                                                                group by ([$$1360 := $COPY_OF(forum,1); $$1361 := $COPY_OF(country,1)]) decor ([]) {
+                                                                                                          aggregate [$$1359] <- [agg-sql-count(1)] [cardinality: 0.0, op-cost: 0.0, total-cost: 0.0]
+                                                                                                          -- AGGREGATE  |LOCAL|
+                                                                                                            nested tuple source [cardinality: 0.0, op-cost: 0.0, total-cost: 0.0]
+                                                                                                            -- NESTED_TUPLE_SOURCE  |LOCAL|
+                                                                                                       } [cardinality: 0.0, op-cost: 0.0, total-cost: 0.0]
+                                                                                                -- SORT_GROUP_BY[$COPY_OF(forum,1), $COPY_OF(country,1)]  |PARTITIONED|
+                                                                                                  exchange [cardinality: 0.0, op-cost: 0.0, total-cost: 0.0]
+                                                                                                  -- ONE_TO_ONE_EXCHANGE  |PARTITIONED|
+                                                                                                    project ([$COPY_OF(forum,1), $COPY_OF(country,1)]) [cardinality: 0.0, op-cost: 0.0, total-cost: 0.0]
+                                                                                                    -- STREAM_PROJECT  |PARTITIONED|
+                                                                                                      exchange [cardinality: 0.0, op-cost: 0.0, total-cost: 0.0]
+                                                                                                      -- ONE_TO_ONE_EXCHANGE  |PARTITIONED|
+                                                                                                        join (eq($$1279, $$1277)) [cardinality: 0.0, op-cost: 0.0, total-cost: 0.0]
+                                                                                                        -- HYBRID_HASH_JOIN [$$1277][$$1279]  |PARTITIONED|
+                                                                                                          exchange [cardinality: 0.0, op-cost: 0.0, total-cost: 0.0]
+                                                                                                          -- HASH_PARTITION_EXCHANGE [$$1277]  |PARTITIONED|
+                                                                                                            project ([$COPY_OF(country,1), $$1277]) [cardinality: 0.0, op-cost: 0.0, total-cost: 0.0]
+                                                                                                            -- STREAM_PROJECT  |PARTITIONED|
+                                                                                                              exchange [cardinality: 0.0, op-cost: 0.0, total-cost: 0.0]
+                                                                                                              -- ONE_TO_ONE_EXCHANGE  |PARTITIONED|
+                                                                                                                join (eq($$1278, $$1276)) [cardinality: 0.0, op-cost: 0.0, total-cost: 0.0]
+                                                                                                                -- HYBRID_HASH_JOIN [$$1276][$$1278]  |PARTITIONED|
+                                                                                                                  exchange [cardinality: 0.0, op-cost: 0.0, total-cost: 0.0]
+                                                                                                                  -- HASH_PARTITION_EXCHANGE [$$1276]  |PARTITIONED|
+                                                                                                                    project ([$COPY_OF(country,1), $$1276]) [cardinality: 0.0, op-cost: 0.0, total-cost: 0.0]
+                                                                                                                    -- STREAM_PROJECT  |PARTITIONED|
+                                                                                                                      exchange [cardinality: 0.0, op-cost: 0.0, total-cost: 0.0]
+                                                                                                                      -- ONE_TO_ONE_EXCHANGE  |PARTITIONED|
+                                                                                                                        join (eq($$1312, $$1274)) [cardinality: 0.0, op-cost: 0.0, total-cost: 0.0]
+                                                                                                                        -- HYBRID_HASH_JOIN [$$1274][$$1312]  |PARTITIONED|
+                                                                                                                          exchange [cardinality: 0.0, op-cost: 0.0, total-cost: 0.0]
+                                                                                                                          -- HASH_PARTITION_EXCHANGE [$$1274]  |PARTITIONED|
+                                                                                                                            project ([$COPY_OF(country,1), $$1274]) [cardinality: 0.0, op-cost: 0.0, total-cost: 0.0]
+                                                                                                                            -- STREAM_PROJECT  |PARTITIONED|
+                                                                                                                              exchange [cardinality: 0.0, op-cost: 0.0, total-cost: 0.0]
+                                                                                                                              -- ONE_TO_ONE_EXCHANGE  |PARTITIONED|
+                                                                                                                                join (eq($$1309, $$1275)) [cardinality: 0.0, op-cost: 0.0, total-cost: 0.0]
+                                                                                                                                -- HYBRID_HASH_JOIN [$$1309][$$1275]  |PARTITIONED|
+                                                                                                                                  exchange [cardinality: 0.0, op-cost: 0.0, total-cost: 0.0]
+                                                                                                                                  -- HASH_PARTITION_EXCHANGE [$$1309]  |PARTITIONED|
+                                                                                                                                    project ([$$1274, $$1309]) [cardinality: 0.0, op-cost: 0.0, total-cost: 0.0]
+                                                                                                                                    -- STREAM_PROJECT  |PARTITIONED|
+                                                                                                                                      assign [$$1309] <- [$COPY_OF(#2,1).getField(3)] [cardinality: 0.0, op-cost: 0.0, total-cost: 0.0]
+                                                                                                                                      -- ASSIGN  |PARTITIONED|
+                                                                                                                                        exchange [cardinality: 0.0, op-cost: 0.0, total-cost: 0.0]
+                                                                                                                                        -- ONE_TO_ONE_EXCHANGE  |PARTITIONED|
+                                                                                                                                          data-scan []<-[$$1274, $COPY_OF(#2,1)] <- SNB.Native.Cities [cardinality: 0.0, op-cost: 0.0, total-cost: 0.0]
+                                                                                                                                          -- DATASOURCE_SCAN  |PARTITIONED|
+                                                                                                                                            exchange [cardinality: 0.0, op-cost: 0.0, total-cost: 0.0]
+                                                                                                                                            -- ONE_TO_ONE_EXCHANGE  |PARTITIONED|
+                                                                                                                                              empty-tuple-source [cardinality: 0.0, op-cost: 0.0, total-cost: 0.0]
+                                                                                                                                              -- EMPTY_TUPLE_SOURCE  |PARTITIONED|
+                                                                                                                                  exchange [cardinality: 0.0, op-cost: 0.0, total-cost: 0.0]
+                                                                                                                                  -- HASH_PARTITION_EXCHANGE [$$1275]  |PARTITIONED|
+                                                                                                                                    data-scan []<-[$$1275, $COPY_OF(country,1)] <- SNB.Native.Countries [cardinality: 0.0, op-cost: 0.0, total-cost: 0.0]
+                                                                                                                                    -- DATASOURCE_SCAN  |PARTITIONED|
+                                                                                                                                      exchange [cardinality: 0.0, op-cost: 0.0, total-cost: 0.0]
+                                                                                                                                      -- ONE_TO_ONE_EXCHANGE  |PARTITIONED|
+                                                                                                                                        empty-tuple-source [cardinality: 0.0, op-cost: 0.0, total-cost: 0.0]
+                                                                                                                                        -- EMPTY_TUPLE_SOURCE  |PARTITIONED|
+                                                                                                                          exchange [cardinality: 0.0, op-cost: 0.0, total-cost: 0.0]
+                                                                                                                          -- HASH_PARTITION_EXCHANGE [$$1312]  |PARTITIONED|
+                                                                                                                            project ([$$1276, $$1312]) [cardinality: 0.0, op-cost: 0.0, total-cost: 0.0]
+                                                                                                                            -- STREAM_PROJECT  |PARTITIONED|
+                                                                                                                              assign [$$1312] <- [$COPY_OF(member,1).getField(8)] [cardinality: 0.0, op-cost: 0.0, total-cost: 0.0]
+                                                                                                                              -- ASSIGN  |PARTITIONED|
+                                                                                                                                exchange [cardinality: 0.0, op-cost: 0.0, total-cost: 0.0]
+                                                                                                                                -- ONE_TO_ONE_EXCHANGE  |PARTITIONED|
+                                                                                                                                  data-scan []<-[$$1276, $COPY_OF(member,1)] <- SNB.Native.Persons [cardinality: 0.0, op-cost: 0.0, total-cost: 0.0]
+                                                                                                                                  -- DATASOURCE_SCAN  |PARTITIONED|
+                                                                                                                                    exchange [cardinality: 0.0, op-cost: 0.0, total-cost: 0.0]
+                                                                                                                                    -- ONE_TO_ONE_EXCHANGE  |PARTITIONED|
+                                                                                                                                      empty-tuple-source [cardinality: 0.0, op-cost: 0.0, total-cost: 0.0]
+                                                                                                                                      -- EMPTY_TUPLE_SOURCE  |PARTITIONED|
+                                                                                                                  exchange [cardinality: 0.0, op-cost: 0.0, total-cost: 0.0]
+                                                                                                                  -- HASH_PARTITION_EXCHANGE [$$1278]  |PARTITIONED|
+                                                                                                                    replicate [cardinality: 0.0, op-cost: 0.0, total-cost: 0.0]
+                                                                                                                    -- REPLICATE  |PARTITIONED|
+                                                                                                                      exchange [cardinality: 0.0, op-cost: 0.0, total-cost: 0.0]
+                                                                                                                      -- ONE_TO_ONE_EXCHANGE  |PARTITIONED|
+                                                                                                                        project ([$$1277, $$1278]) [cardinality: 0.0, op-cost: 0.0, total-cost: 0.0]
+                                                                                                                        -- STREAM_PROJECT  |PARTITIONED|
+                                                                                                                          exchange [cardinality: 0.0, op-cost: 0.0, total-cost: 0.0]
+                                                                                                                          -- ONE_TO_ONE_EXCHANGE  |PARTITIONED|
+                                                                                                                            data-scan []<-[$$1277, $$1278, $COPY_OF(#4,1)] <- SNB.Native.ForumPerson [cardinality: 0.0, op-cost: 0.0, total-cost: 0.0]
+                                                                                                                            -- DATASOURCE_SCAN  |PARTITIONED|
+                                                                                                                              exchange [cardinality: 0.0, op-cost: 0.0, total-cost: 0.0]
+                                                                                                                              -- ONE_TO_ONE_EXCHANGE  |PARTITIONED|
+                                                                                                                                empty-tuple-source [cardinality: 0.0, op-cost: 0.0, total-cost: 0.0]
+                                                                                                                                -- EMPTY_TUPLE_SOURCE  |PARTITIONED|
+                                                                                                          exchange [cardinality: 0.0, op-cost: 0.0, total-cost: 0.0]
+                                                                                                          -- HASH_PARTITION_EXCHANGE [$$1279]  |PARTITIONED|
+                                                                                                            select (gt($COPY_OF(forum,1).getField(2), datetime: { 2010-12-02T00:00:00.000 })) [cardinality: 0.0, op-cost: 0.0, total-cost: 0.0]
+                                                                                                            -- STREAM_SELECT  |PARTITIONED|
+                                                                                                              exchange [cardinality: 0.0, op-cost: 0.0, total-cost: 0.0]
+                                                                                                              -- ONE_TO_ONE_EXCHANGE  |PARTITIONED|
+                                                                                                                data-scan []<-[$$1279, $COPY_OF(forum,1)] <- SNB.Native.Forums [cardinality: 0.0, op-cost: 0.0, total-cost: 0.0]
+                                                                                                                -- DATASOURCE_SCAN  |PARTITIONED|
+                                                                                                                  exchange [cardinality: 0.0, op-cost: 0.0, total-cost: 0.0]
+                                                                                                                  -- ONE_TO_ONE_EXCHANGE  |PARTITIONED|
+                                                                                                                    empty-tuple-source [cardinality: 0.0, op-cost: 0.0, total-cost: 0.0]
+                                                                                                                    -- EMPTY_TUPLE_SOURCE  |PARTITIONED|
+                                                            exchange [cardinality: 0.0, op-cost: 0.0, total-cost: 0.0]
+                                                            -- HASH_PARTITION_EXCHANGE [$$1280]  |PARTITIONED|
+                                                              project ([$$1280, $$1281]) [cardinality: 0.0, op-cost: 0.0, total-cost: 0.0]
+                                                              -- STREAM_PROJECT  |PARTITIONED|
+                                                                assign [$$1280, $$1281] <- [$$1277, $$1278] [cardinality: 0.0, op-cost: 0.0, total-cost: 0.0]
+                                                                -- ASSIGN  |PARTITIONED|
+                                                                  exchange [cardinality: 0.0, op-cost: 0.0, total-cost: 0.0]
+                                                                  -- ONE_TO_ONE_EXCHANGE  |PARTITIONED|
+                                                                    replicate [cardinality: 0.0, op-cost: 0.0, total-cost: 0.0]
+                                                                    -- REPLICATE  |PARTITIONED|
+                                                                      exchange [cardinality: 0.0, op-cost: 0.0, total-cost: 0.0]
+                                                                      -- ONE_TO_ONE_EXCHANGE  |PARTITIONED|
+                                                                        project ([$$1277, $$1278]) [cardinality: 0.0, op-cost: 0.0, total-cost: 0.0]
+                                                                        -- STREAM_PROJECT  |PARTITIONED|
+                                                                          exchange [cardinality: 0.0, op-cost: 0.0, total-cost: 0.0]
+                                                                          -- ONE_TO_ONE_EXCHANGE  |PARTITIONED|
+                                                                            data-scan []<-[$$1277, $$1278, $COPY_OF(#4,1)] <- SNB.Native.ForumPerson [cardinality: 0.0, op-cost: 0.0, total-cost: 0.0]
+                                                                            -- DATASOURCE_SCAN  |PARTITIONED|
+                                                                              exchange [cardinality: 0.0, op-cost: 0.0, total-cost: 0.0]
+                                                                              -- ONE_TO_ONE_EXCHANGE  |PARTITIONED|
+                                                                                empty-tuple-source [cardinality: 0.0, op-cost: 0.0, total-cost: 0.0]
+                                                                                -- EMPTY_TUPLE_SOURCE  |PARTITIONED|
+                                                    exchange [cardinality: 0.0, op-cost: 0.0, total-cost: 0.0]
+                                                    -- HASH_PARTITION_EXCHANGE [$$1282]  |PARTITIONED|
+                                                      data-scan []<-[$$1282, $COPY_OF(person,1)] <- SNB.Native.Persons [cardinality: 0.0, op-cost: 0.0, total-cost: 0.0]
+                                                      -- DATASOURCE_SCAN  |PARTITIONED|
+                                                        exchange [cardinality: 0.0, op-cost: 0.0, total-cost: 0.0]
+                                                        -- ONE_TO_ONE_EXCHANGE  |PARTITIONED|
+                                                          empty-tuple-source [cardinality: 0.0, op-cost: 0.0, total-cost: 0.0]
+                                                          -- EMPTY_TUPLE_SOURCE  |PARTITIONED|
+                                            exchange [cardinality: 0.0, op-cost: 0.0, total-cost: 0.0]
+                                            -- HASH_PARTITION_EXCHANGE [$$1316]  |PARTITIONED|
+                                              project ([$$1364, $COPY_OF(#7,6), $$1328, $COPY_OF(post,5), $$1323, $$1316]) [cardinality: 0.0, op-cost: 0.0, total-cost: 0.0]
+                                              -- STREAM_PROJECT  |PARTITIONED|
+                                                assign [$$1328, $$1364] <- [$COPY_OF(post,5).getField(0), $COPY_OF(message,2).getField(0)] [cardinality: 0.0, op-cost: 0.0, total-cost: 0.0]
+                                                -- ASSIGN  |PARTITIONED|
+                                                  project ([$COPY_OF(#7,6), $$1316, $COPY_OF(message,2), $COPY_OF(post,5), $$1323]) [cardinality: 0.0, op-cost: 0.0, total-cost: 0.0]
+                                                  -- STREAM_PROJECT  |PARTITIONED|
+                                                    exchange [cardinality: 0.0, op-cost: 0.0, total-cost: 0.0]
+                                                    -- ONE_TO_ONE_EXCHANGE  |PARTITIONED|
+                                                      join (eq($$1304, $$1285)) [cardinality: 0.0, op-cost: 0.0, total-cost: 0.0]
+                                                      -- HYBRID_HASH_JOIN [$$1304][$$1285]  |PARTITIONED|
+                                                        exchange [cardinality: 0.0, op-cost: 0.0, total-cost: 0.0]
+                                                        -- HASH_PARTITION_EXCHANGE [$$1304]  |PARTITIONED|
+                                                          project ([$COPY_OF(#7,6), $$1316, $COPY_OF(message,2), $$1304]) [cardinality: 0.0, op-cost: 0.0, total-cost: 0.0]
+                                                          -- STREAM_PROJECT  |PARTITIONED|
+                                                            assign [$$1304] <- [$COPY_OF(post,3).getField(0)] [cardinality: 0.0, op-cost: 0.0, total-cost: 0.0]
+                                                            -- ASSIGN  |PARTITIONED|
+                                                              marker-sink [cardinality: 0.0, op-cost: 0.0, total-cost: 0.0]
+                                                              -- MARKER_SINK  |PARTITIONED|
+                                                                exchange [cardinality: 0.0, op-cost: 0.0, total-cost: 0.0]
+                                                                -- STATE_RELEASE (ONE_TO_ONE_EXCHANGE)  |PARTITIONED|
+                                                                  recursive-head [$COPY_OF(#7,3) <- $COPY_OF(#7,6),$#10 <- $COPY_OF(post,3)] [cardinality: 0.0, op-cost: 0.0, total-cost: 0.0]
+                                                                  -- RECURSIVE_HEAD  |PARTITIONED|
+                                                                    exchange [cardinality: 0.0, op-cost: 0.0, total-cost: 0.0]
+                                                                    -- STATE_RELEASE (ONE_TO_ONE_EXCHANGE)  |PARTITIONED|
+                                                                      project ([$COPY_OF(post,3), $COPY_OF(#7,6), $COPY_OF(message,2), $$1316]) [cardinality: 0.0, op-cost: 0.0, total-cost: 0.0]
+                                                                      -- STATE_RELEASE (STREAM_PROJECT)  |PARTITIONED|
+                                                                        exchange [cardinality: 0.0, op-cost: 0.0, total-cost: 0.0]
+                                                                        -- STATE_RELEASE (ONE_TO_ONE_EXCHANGE)  |PARTITIONED|
+                                                                          fixed-point [$COPY_OF(post,3) <- ($COPY_OF(message,2),$COPY_OF(#11,1)) $COPY_OF(#7,6) <- ($COPY_OF(#7,2),$COPY_OF(#7,4))] {
+                                                                                    exchange [cardinality: 0.0, op-cost: 0.0, total-cost: 0.0]
+                                                                                    -- STATE_RELEASE (ONE_TO_ONE_EXCHANGE)  |PARTITIONED|
+                                                                                      project ([$COPY_OF(#11,1), $COPY_OF(#7,4), $COPY_OF(message,2), $$1316]) [cardinality: 0.0, op-cost: 0.0, total-cost: 0.0]
+                                                                                      -- STATE_RELEASE (STREAM_PROJECT)  |PARTITIONED|
+                                                                                        assign [$COPY_OF(#7,4)] <- [append-to-existing-path($$1284, $COPY_OF(#12,1), $COPY_OF(#7,3))] [cardinality: 0.0, op-cost: 0.0, total-cost: 0.0]
+                                                                                        -- STATE_RELEASE (ASSIGN)  |PARTITIONED|
+                                                                                          select (is-distinct-everything($$1284, $COPY_OF(#12,1), $COPY_OF(#7,3))) [cardinality: 0.0, op-cost: 0.0, total-cost: 0.0]
+                                                                                          -- STATE_RELEASE (STREAM_SELECT)  |PARTITIONED|
+                                                                                            exchange [cardinality: 0.0, op-cost: 0.0, total-cost: 0.0]
+                                                                                            -- STATE_RELEASE (ONE_TO_ONE_EXCHANGE)  |PARTITIONED|
+                                                                                              join (eq($$1284, $$1292)) [cardinality: 0.0, op-cost: 0.0, total-cost: 0.0]
+                                                                                              -- PERSISTENT_BUILD_JOIN [$$1292][$$1284]  |PARTITIONED|
+                                                                                                exchange [cardinality: 0.0, op-cost: 0.0, total-cost: 0.0]
+                                                                                                -- STATE_RELEASE (HASH_PARTITION_EXCHANGE [$$1292])  |PARTITIONED|
+                                                                                                  assign [$COPY_OF(#12,1)] <- [{"id": $$1291, "replyOfMessageId": $$1292}] [cardinality: 0.0, op-cost: 0.0, total-cost: 0.0]
+                                                                                                  -- STATE_RELEASE (ASSIGN)  |PARTITIONED|
+                                                                                                    assign [$$1292, $$1291] <- [$#10.getField(11), $#10.getField(0)] [cardinality: 0.0, op-cost: 0.0, total-cost: 0.0]
+                                                                                                    -- STATE_RELEASE (ASSIGN)  |PARTITIONED|
+                                                                                                      recursive-tail [$#10 <- ($COPY_OF(message,2),$COPY_OF(post,3)), $COPY_OF(#7,3) <- ($COPY_OF(#7,2),$COPY_OF(#7,6))] [cardinality: 0.0, op-cost: 0.0, total-cost: 0.0]
+                                                                                                      -- RECURSIVE_TAIL  |PARTITIONED|
+                                                                                                exchange [cardinality: 0.0, op-cost: 0.0, total-cost: 0.0]
+                                                                                                -- HASH_PARTITION_EXCHANGE [$$1284]  |PARTITIONED|
+                                                                                                  data-scan []<-[$$1284, $COPY_OF(#11,1)] <- SNB.Native.Messages [cardinality: 0.0, op-cost: 0.0, total-cost: 0.0]
+                                                                                                  -- DATASOURCE_SCAN  |PARTITIONED|
+                                                                                                    exchange [cardinality: 0.0, op-cost: 0.0, total-cost: 0.0]
+                                                                                                    -- ONE_TO_ONE_EXCHANGE  |PARTITIONED|
+                                                                                                      empty-tuple-source [cardinality: 0.0, op-cost: 0.0, total-cost: 0.0]
+                                                                                                      -- EMPTY_TUPLE_SOURCE  |PARTITIONED|
+                                                                                 } [cardinality: 0.0, op-cost: 0.0, total-cost: 0.0]
+                                                                          -- FIXED_POINT  |PARTITIONED|
+                                                                            exchange [cardinality: 0.0, op-cost: 0.0, total-cost: 0.0]
+                                                                            -- ONE_TO_ONE_EXCHANGE  |PARTITIONED|
+                                                                              project ([$COPY_OF(message,2), $COPY_OF(#7,2), $COPY_OF(message,2), $$1316]) [cardinality: 0.0, op-cost: 0.0, total-cost: 0.0]
+                                                                              -- STREAM_PROJECT  |PARTITIONED|
+                                                                                assign [$COPY_OF(#7,2), $$1316] <- [create-new-zero-hop-path($$1283), $COPY_OF(message,2).getField(8)] [cardinality: 0.0, op-cost: 0.0, total-cost: 0.0]
+                                                                                -- ASSIGN  |PARTITIONED|
+                                                                                  exchange [cardinality: 0.0, op-cost: 0.0, total-cost: 0.0]
+                                                                                  -- ONE_TO_ONE_EXCHANGE  |PARTITIONED|
+                                                                                    data-scan []<-[$$1283, $COPY_OF(message,2)] <- SNB.Native.Messages [cardinality: 0.0, op-cost: 0.0, total-cost: 0.0]
+                                                                                    -- DATASOURCE_SCAN  |PARTITIONED|
+                                                                                      exchange [cardinality: 0.0, op-cost: 0.0, total-cost: 0.0]
+                                                                                      -- ONE_TO_ONE_EXCHANGE  |PARTITIONED|
+                                                                                        empty-tuple-source [cardinality: 0.0, op-cost: 0.0, total-cost: 0.0]
+                                                                                        -- EMPTY_TUPLE_SOURCE  |PARTITIONED|
+                                                        exchange [cardinality: 0.0, op-cost: 0.0, total-cost: 0.0]
+                                                        -- HASH_PARTITION_EXCHANGE [$$1285]  |PARTITIONED|
+                                                          select (and($COPY_OF(post,5).getField(12), not(is-unknown($$1323)))) [cardinality: 0.0, op-cost: 0.0, total-cost: 0.0]
+                                                          -- STREAM_SELECT  |PARTITIONED|
+                                                            assign [$$1323] <- [$COPY_OF(post,5).getField(9)] [cardinality: 0.0, op-cost: 0.0, total-cost: 0.0]
+                                                            -- ASSIGN  |PARTITIONED|
+                                                              exchange [cardinality: 0.0, op-cost: 0.0, total-cost: 0.0]
+                                                              -- ONE_TO_ONE_EXCHANGE  |PARTITIONED|
+                                                                data-scan []<-[$$1285, $COPY_OF(post,5)] <- SNB.Native.Messages [cardinality: 0.0, op-cost: 0.0, total-cost: 0.0]
+                                                                -- DATASOURCE_SCAN  |PARTITIONED|
+                                                                  exchange [cardinality: 0.0, op-cost: 0.0, total-cost: 0.0]
+                                                                  -- ONE_TO_ONE_EXCHANGE  |PARTITIONED|
+                                                                    empty-tuple-source [cardinality: 0.0, op-cost: 0.0, total-cost: 0.0]
+                                                                    -- EMPTY_TUPLE_SOURCE  |PARTITIONED|

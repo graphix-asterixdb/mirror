@@ -1,0 +1,894 @@
+//
+// Licensed to the Apache Software Foundation (ASF) under one
+// or more contributor license agreements.  See the NOTICE file
+// distributed with this work for additional information
+// regarding copyright ownership.  The ASF licenses this file
+// to you under the Apache License, Version 2.0 (the
+// "License"); you may not use this file except in compliance
+// with the License.  You may obtain a copy of the License at
+//
+//   http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing,
+// software distributed under the License is distributed on an
+// "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+// KIND, either express or implied.  See the License for the
+// specific language governing permissions and limitations
+// under the License.
+//
+
+import java.util.HashSet;
+import java.util.Objects;
+import java.util.Set;
+
+import org.apache.asterix.graphix.common.metadata.IElementIdentifier;
+import org.apache.asterix.graphix.lang.clause.FromGraphClause;
+import org.apache.asterix.graphix.lang.clause.FromGraphTerm;
+import org.apache.asterix.graphix.lang.clause.LetGraphClause;
+import org.apache.asterix.graphix.lang.clause.MatchClause;
+import org.apache.asterix.graphix.lang.expression.mapping.EdgeConstructor;
+import org.apache.asterix.graphix.lang.expression.mapping.GraphConstructor;
+import org.apache.asterix.graphix.lang.expression.mapping.VertexConstructor;
+import org.apache.asterix.graphix.lang.expression.pattern.EdgePatternExpr;
+import org.apache.asterix.graphix.lang.expression.pattern.ElementDirection;
+import org.apache.asterix.graphix.lang.expression.pattern.IPatternConstruct;
+import org.apache.asterix.graphix.lang.expression.pattern.PathPatternExpr;
+import org.apache.asterix.graphix.lang.expression.pattern.QueryPatternExpr;
+import org.apache.asterix.graphix.lang.expression.pattern.VertexPatternExpr;
+import org.apache.asterix.graphix.lang.hint.CorrelationJoinAnnotation;
+import org.apache.asterix.graphix.lang.hint.LeftLinkJoinAnnotation;
+import org.apache.asterix.graphix.lang.hint.NavigationJoinAnnotation;
+import org.apache.asterix.graphix.lang.hint.RightLinkJoinAnnotation;
+import org.apache.asterix.graphix.lang.optype.MatchType;
+import org.apache.asterix.graphix.lang.statement.CreateGraphStatement;
+import org.apache.asterix.graphix.lang.statement.GraphDropStatement;
+import org.apache.asterix.graphix.lang.statement.GraphElementDeclaration;
+import org.apache.asterix.graphix.lang.struct.EdgeDescriptor;
+import org.apache.asterix.graphix.lang.struct.ElementLabel;
+import org.apache.asterix.graphix.lang.struct.PathDescriptor;
+import org.apache.asterix.graphix.lang.struct.VertexDescriptor;
+import org.apache.asterix.lang.sqlpp.parser.ParseException;
+import org.apache.asterix.lang.sqlpp.parser.SqlppParseException;
+import org.apache.asterix.lang.sqlpp.parser.Token;
+
+@new_at_the_class_def
+public GraphElementDeclaration parseGraphElementBody(IElementIdentifier identifier) throws CompilationException {
+    return parseImpl(new ParseFunction<GraphElementDeclaration>() {
+        @Override
+        public GraphElementDeclaration parse() throws ParseException {
+            DataverseName dataverse = defaultDataverse;
+            defaultDataverse = identifier.getGraphIdentifier().getDataverseName();
+
+            // We borrow the ViewBody production, where we have a SelectExpression or a VariableRef.
+            createNewScope();
+            Expression elementBodyExpr = GraphixParser.this.ViewBody();
+            removeCurrentScope();
+
+            defaultDataverse = dataverse;
+            return new GraphElementDeclaration(identifier, elementBodyExpr, true);
+        }
+    });
+}
+
+@override
+FromClause FromClause() throws ParseException :
+{
+  List<AbstractClause> fromTerms = new ArrayList<AbstractClause>();
+  FromGraphTerm fromGraphTerm = null;
+  FromTerm fromTerm = null;
+  Token startToken = null;
+  extendCurrentScope();
+}
+{
+  <FROM>
+  { startToken = token; }
+  (
+    ( <GRAPH> fromGraphTerm = FromGraphTerm() { fromTerms.add(fromGraphTerm); } )
+    |
+    ( fromTerm = FromTerm() { fromTerms.add(fromTerm); } )
+  )
+  (
+    LOOKAHEAD(2)
+    <COMMA>
+    (
+      ( <GRAPH> fromGraphTerm = FromGraphTerm() { fromTerms.add(fromGraphTerm); } )
+      |
+      ( fromTerm = FromTerm() { fromTerms.add(fromTerm); } )
+    )
+  )*
+  {
+    boolean hasFromGraphTerms = false;
+    for (AbstractClause term : fromTerms) {
+      if (term instanceof FromGraphTerm) {
+        hasFromGraphTerms = true;
+        break;
+      }
+    }
+    if (!hasFromGraphTerms) {
+      List<FromTerm> castedFromTerms = new ArrayList<FromTerm>();
+      for (AbstractClause term : fromTerms) {
+        castedFromTerms.add((FromTerm) term);
+      }
+      FromClause fromClause = new FromClause(castedFromTerms);
+      return addSourceLocation(fromClause, startToken);
+
+    } else {
+      FromGraphClause fromGraphClause = new FromGraphClause(fromTerms);
+      return addSourceLocation(fromGraphClause, startToken);
+    }
+  }
+}
+
+@merge
+Statement CreateStatement() throws ParseException:
+{
+}
+{
+  (
+    before:
+    after: | stmt = CreateGraphStatement(startToken, false)
+  )
+  {
+  }
+}
+
+@merge
+Statement CreateOrReplaceStatement(Token startStmtToken) throws ParseException:
+{
+}
+{
+  (
+    before:
+    after: | stmt = CreateGraphStatement(startStmtToken, true)
+  )
+  {
+  }
+}
+
+@merge
+Statement DropStatement() throws ParseException:
+{
+}
+{
+  (
+    before:
+    after: | stmt = DropGraphStatement(startToken)
+  )
+  {
+  }
+}
+
+@new
+CreateGraphStatement CreateGraphStatement(Token startStmtToken, boolean orReplace) throws ParseException:
+{
+  CreateGraphStatement stmt = null;
+}
+{
+  <GRAPH> stmt = CreateGraphSpecification(startStmtToken, orReplace)
+  {
+    return stmt;
+  }
+}
+
+@new
+CreateGraphStatement CreateGraphSpecification(Token startStmtToken, boolean orReplace) throws ParseException:
+{
+  Pair<DataverseName, Identifier> nameComponents = null;
+  GraphConstructor graphConstructor = null;
+  boolean ifNotExists = false;
+}
+{
+  nameComponents = QualifiedName()
+  ifNotExists = IfNotExists()
+  {
+    if (orReplace && ifNotExists) {
+      throw new SqlppParseException(getSourceLocation(startStmtToken), "Unexpected IF NOT EXISTS");
+    }
+  }
+  <AS>
+  (
+    (
+      <LEFTPAREN> graphConstructor = GraphConstructor(token) <RIGHTPAREN>
+    )
+    |
+    graphConstructor = GraphConstructor(token)
+  )
+  {
+    CreateGraphStatement stmt = new CreateGraphStatement(
+      nameComponents.first, nameComponents.second.getValue(), orReplace, ifNotExists, graphConstructor
+    );
+    return addSourceLocation(stmt, startStmtToken);
+  }
+}
+
+@new
+GraphDropStatement DropGraphStatement(Token startStmtToken) throws ParseException:
+{
+   GraphDropStatement stmt = null;
+}
+{
+  <GRAPH> stmt = DropGraphSpecification(startStmtToken)
+  {
+    return stmt;
+  }
+}
+
+@new
+GraphDropStatement DropGraphSpecification(Token startStmtToken) throws ParseException:
+{
+  Pair<DataverseName, Identifier> pairId = null;
+  boolean ifExists = false;
+}
+{
+  pairId = QualifiedName() ifExists = IfExists()
+  {
+    GraphDropStatement stmt = new GraphDropStatement(pairId.first, pairId.second.getValue(), ifExists);
+    return addSourceLocation(stmt, startStmtToken);
+  }
+}
+
+@new
+Pair<List<Integer>, List<List<String>>> KeyFields() throws ParseException:
+{
+  Pair<List<Integer>, List<List<String>>> keyFields = null;
+}
+{
+  // This is essentially an alias for the production PrimaryKeyFields.
+  keyFields = PrimaryKeyFields()
+  {
+    return keyFields;
+  }
+}
+
+@override
+LetClause WithElement() throws ParseException:
+{
+  GraphConstructor graphConstructor = null;
+  VariableExpr variableExpr = null;
+  Expression boundExpr = null;
+  extendCurrentScope();
+}
+{
+  (
+    (
+      <GRAPH> variableExpr = Variable() <AS>
+      (
+        (
+          <LEFTPAREN> graphConstructor = GraphConstructor(token) <RIGHTPAREN>
+        )
+        |
+        graphConstructor = GraphConstructor(token)
+      )
+    )
+    |
+    (
+      variableExpr = Variable() <AS> boundExpr = Expression()
+    )
+  )
+  {
+    LetClause letClause;
+    if (graphConstructor != null) {
+      letClause = new LetGraphClause(variableExpr, graphConstructor);
+    } else {
+      letClause = new LetClause(variableExpr, boundExpr);
+    }
+    letClause.setSourceLocation(variableExpr.getSourceLocation());
+    return letClause;
+  }
+}
+
+
+@new
+GraphConstructor GraphConstructor(Token startStmtToken) throws ParseException:
+{
+  List<VertexConstructor> vertexConstructors = new ArrayList<VertexConstructor>();
+  List<EdgeConstructor> edgeConstructors = new ArrayList<EdgeConstructor>();
+  VertexConstructor vertexConstructor = null;
+  EdgeConstructor edgeConstructor = null;
+}
+{
+  vertexConstructor = GraphVertexSpecification(startStmtToken) { vertexConstructors.add(vertexConstructor); }
+  ( LOOKAHEAD(2)
+    <COMMA>
+    (
+      ( vertexConstructor = GraphVertexSpecification(token) { vertexConstructors.add(vertexConstructor); } )
+      | ( edgeConstructor = GraphEdgeSpecification(token) { edgeConstructors.add(edgeConstructor); } )
+    )
+  )*
+  {
+    GraphConstructor graphConstructor = new GraphConstructor(vertexConstructors, edgeConstructors);
+    return addSourceLocation(graphConstructor, startStmtToken);
+  }
+}
+
+@new
+VertexConstructor GraphVertexSpecification(Token startStmtToken) throws ParseException:
+{
+  Pair<List<Integer>, List<List<String>>> primaryKeyFields;
+  Token beginPos = null, endPos = null;
+  int positionOffset = 0;
+  Expression vertexDefinitionExpr;
+  ElementLabel elementLabel;
+}
+{
+  <VERTEX>
+  elementLabel = GraphVertexDefinitionPattern()
+  <PRIMARY> <KEY> <LEFTPAREN> primaryKeyFields = KeyFields() <RIGHTPAREN>
+  <AS>
+  {
+    beginPos = token;
+    createNewScope();
+  }
+  (
+    vertexDefinitionExpr = ViewBody() { endPos = token; positionOffset++; }
+    | <LEFTPAREN> { beginPos = token; } vertexDefinitionExpr = ViewBody() { endPos = token; } <RIGHTPAREN>
+  )
+  {
+    String vDef = extractFragment(
+      beginPos.beginLine, beginPos.beginColumn + positionOffset, endPos.endLine, endPos.endColumn + 1
+    );
+    removeCurrentScope();
+    VertexConstructor vertexConstructor = new VertexConstructor(
+      elementLabel, primaryKeyFields.second, primaryKeyFields.first, vertexDefinitionExpr, vDef
+    );
+    return addSourceLocation(vertexConstructor, startStmtToken);
+  }
+}
+
+@new
+ElementLabel GraphVertexDefinitionPattern() throws ParseException:
+{
+  String vertexName;
+}
+{
+  <LEFTPAREN> <COLON> vertexName = Identifier() <RIGHTPAREN>
+  {
+    return new ElementLabel(vertexName, false);
+  }
+}
+
+@new
+EdgeConstructor GraphEdgeSpecification(Token startStmtToken) throws ParseException:
+{
+  Pair<Triple<ElementLabel, ElementLabel, ElementLabel>, Boolean> edgeDefinitionPattern;
+  Pair<List<Integer>, List<List<String>>> keyFields;
+  Token beginPos = null, endPos = null;
+  Expression edgeDefinitionExpr = null;
+  int positionOffset = 0;
+
+  List<Integer> destinationKeySourceIndicators = null;
+  List<Integer> sourceKeySourceIndicators = null;
+  List<List<String>> destinationKeyFields = null;
+  List<List<String>> sourceKeyFields = null;
+}
+{
+  <EDGE>
+  edgeDefinitionPattern = GraphEdgeDefinitionPattern()
+  (
+    <SOURCE> <KEY> <LEFTPAREN> keyFields = KeyFields() <RIGHTPAREN>
+    {
+      sourceKeyFields = keyFields.second;
+      sourceKeySourceIndicators = keyFields.first;
+    }
+    <DESTINATION> <KEY> <LEFTPAREN> keyFields = KeyFields() <RIGHTPAREN>
+    {
+      destinationKeyFields = keyFields.second;
+      destinationKeySourceIndicators = keyFields.first;
+    }
+    <AS>
+    {
+      beginPos = token;
+      createNewScope();
+    }
+    (
+      edgeDefinitionExpr = SelectExpression(true) { endPos = token; positionOffset++;  }
+      | <LEFTPAREN> { beginPos = token; } edgeDefinitionExpr = SelectExpression(true) { endPos = token; } <RIGHTPAREN>
+    )
+  )
+  {
+    ElementLabel destinationLabel, edgeLabel, sourceLabel;
+    if (edgeDefinitionPattern.second) { // isDirectedLeft
+      sourceLabel = edgeDefinitionPattern.first.third;
+      edgeLabel = edgeDefinitionPattern.first.second;
+      destinationLabel = edgeDefinitionPattern.first.first;
+
+    } else {
+      sourceLabel = edgeDefinitionPattern.first.first;
+      edgeLabel = edgeDefinitionPattern.first.second;
+      destinationLabel = edgeDefinitionPattern.first.third;
+    }
+
+    String eDef = null;
+    if (edgeDefinitionExpr != null) {
+      eDef = extractFragment(
+        beginPos.beginLine, beginPos.beginColumn + positionOffset, endPos.endLine, endPos.endColumn + 1
+      );
+      removeCurrentScope();
+    }
+
+    EdgeConstructor edgeConstructor = new EdgeConstructor(
+      edgeLabel, destinationLabel, sourceLabel, destinationKeyFields, destinationKeySourceIndicators, sourceKeyFields,
+      sourceKeySourceIndicators, edgeDefinitionExpr, eDef
+    );
+    return addSourceLocation(edgeConstructor, startStmtToken);
+  }
+}
+
+@new
+Pair<Triple<ElementLabel, ElementLabel, ElementLabel>, Boolean> GraphEdgeDefinitionPattern() throws ParseException:
+{
+  ElementLabel leftElementLabel, rightElementLabel;
+  boolean isDirectedLeft;
+  String edgeName;
+}
+{
+  leftElementLabel = GraphVertexDefinitionPattern()
+  ( <MINUS> <LEFTBRACKET> <COLON> edgeName = Identifier() <RIGHTBRACKET> <MINUS> <GT> { isDirectedLeft = false; }
+  | <LT> <MINUS> <LEFTBRACKET> <COLON> edgeName = Identifier() <RIGHTBRACKET> <MINUS> { isDirectedLeft = true; } )
+  rightElementLabel = GraphVertexDefinitionPattern()
+  {
+    Triple<ElementLabel, ElementLabel, ElementLabel> t = new Triple<ElementLabel, ElementLabel, ElementLabel>(
+      leftElementLabel, new ElementLabel(edgeName, false), rightElementLabel
+    );
+    return new Pair<Triple<ElementLabel, ElementLabel, ElementLabel>, Boolean>(t, isDirectedLeft);
+  }
+}
+
+@new
+FromGraphTerm FromGraphTerm() throws ParseException:
+{
+  Token startToken = token;
+  Pair<DataverseName, Identifier> nameComponents = null;
+  AbstractBinaryCorrelateClause correlateClause = null;
+
+  List<MatchClause> matchClauses = new ArrayList<MatchClause>();
+  List<QueryPatternExpr> patternExpressions = null;
+  List<AbstractBinaryCorrelateClause> correlateClauses = new ArrayList<AbstractBinaryCorrelateClause>();
+}
+{
+  (
+    nameComponents = QualifiedName()
+  )
+  ( <MATCH> )? patternExpressions = QueryPatternExpressions()
+  { matchClauses.add(new MatchClause(patternExpressions, MatchType.LEADING)); }
+  ( LOOKAHEAD(3) // We want to avoid getting confused with the correlated clauses below.
+    (
+      <LEFT> ( <OUTER> )? <MATCH> patternExpressions = QueryPatternExpressions()
+      { matchClauses.add(new MatchClause(patternExpressions, MatchType.LEFTOUTER)); }
+      |
+      ( <INNER> )? <MATCH> patternExpressions = QueryPatternExpressions()
+      { matchClauses.add(new MatchClause(patternExpressions, MatchType.INNER)); }
+    )
+  )*
+  (
+    (
+      correlateClause = JoinOrUnnestClause(JoinType.INNER, UnnestType.INNER)
+      | ( <INNER> correlateClause = JoinOrUnnestClause(JoinType.INNER, UnnestType.INNER) )
+      | ( <LEFT> ( <OUTER> )? correlateClause = JoinOrUnnestClause(JoinType.LEFTOUTER, UnnestType.LEFTOUTER) )
+      | ( <RIGHT> ( <OUTER> )? correlateClause = JoinClause(JoinType.RIGHTOUTER) )
+      | ( <CROSS> correlateClause = CrossJoinClause() )
+    )
+    {
+      correlateClauses.add(correlateClause);
+    }
+  )*
+  {
+    FromGraphTerm fromGraphTerm = new FromGraphTerm(nameComponents.first, nameComponents.second, matchClauses, correlateClauses);
+    return addSourceLocation(fromGraphTerm, startToken);
+  }
+}
+
+@new
+List<QueryPatternExpr> QueryPatternExpressions() throws ParseException:
+{
+  List<QueryPatternExpr> queryPatternExpressions = new ArrayList<QueryPatternExpr>();
+  QueryPatternExpr queryPatternExpr = null;
+  VariableExpr variableExpr = null;
+}
+{
+  queryPatternExpr = QueryPatternExpression() { queryPatternExpressions.add(queryPatternExpr); }
+  ( LOOKAHEAD(2)
+    <COMMA> queryPatternExpr = QueryPatternExpression() { queryPatternExpressions.add(queryPatternExpr); }
+  )*
+  {
+    return queryPatternExpressions;
+  }
+}
+
+@new
+QueryPatternExpr QueryPatternExpression() throws ParseException:
+{
+  List<VertexPatternExpr> vertexExpressions = new ArrayList<VertexPatternExpr>();
+  List<IPatternConstruct> patternExpressions = new ArrayList<IPatternConstruct>();
+
+  Token startToken1 = null, startToken2 = null;
+  Pair<VertexDescriptor, List<IExpressionAnnotation>> vertexDescriptor = null;
+  Pair<PathDescriptor, List<IExpressionAnnotation>> pathDescriptor = null;
+  Pair<EdgeDescriptor, List<IExpressionAnnotation>> edgeDescriptor = null;
+}
+{
+  vertexDescriptor = VertexPatternExpression()
+  {
+    startToken1 = token;
+    VertexPatternExpr vertex = new VertexPatternExpr(vertexDescriptor.first);
+    if (vertexDescriptor.second != null) {
+      vertex.addHints(vertexDescriptor.second);
+    }
+    vertexExpressions.add(addSourceLocation(vertex, startToken1));
+    patternExpressions.add(vertex);
+  }
+  ( // Path patterns share the same starting tokens as edge patterns. We specify the following semantic lookahead.
+    ( LOOKAHEAD( ( <MINUS> | (<LT> <MINUS> ) )
+                 <LEFTBRACKET>
+                 ( Variable() )?
+                 <COLON> ( <CARET> )? ( ParenthesizedLabelValueSet() )?
+                 ( <LEFTBRACE> | <PLUS> | <MUL> ) )
+      pathDescriptor = PathPatternExpression() { startToken2 = token; }
+      | edgeDescriptor = EdgePatternExpression() { startToken2 = token; }
+    )
+    vertexDescriptor = VertexPatternExpression()
+    {
+      VertexPatternExpr leftVertex = vertexExpressions.get(vertexExpressions.size() - 1);
+      VertexPatternExpr rightVertex = new VertexPatternExpr(vertexDescriptor.first);
+      if (vertexDescriptor.second != null) {
+        rightVertex.addHints(vertexDescriptor.second);
+      }
+      if (edgeDescriptor != null) {
+        EdgePatternExpr edge = new EdgePatternExpr(leftVertex, rightVertex, edgeDescriptor.first);
+        if (edgeDescriptor.second != null) {
+          edge.addHints(edgeDescriptor.second);
+        }
+        patternExpressions.add(addSourceLocation(edge, startToken2));
+        edgeDescriptor = null;
+
+      } else { // pathDescriptor != null
+        PathPatternExpr path = new PathPatternExpr(leftVertex, rightVertex, pathDescriptor.first);
+        if (pathDescriptor.second != null) {
+          path.addHints(pathDescriptor.second);
+        }
+        patternExpressions.add(addSourceLocation(path, startToken2));
+        pathDescriptor = null;
+      }
+      vertexExpressions.add(addSourceLocation(rightVertex, token));
+      patternExpressions.add(rightVertex);
+    }
+  )*
+  {
+    QueryPatternExpr queryPattern = new QueryPatternExpr(patternExpressions);
+    return addSourceLocation(queryPattern, startToken1);
+  }
+}
+
+@new
+Pair<VertexDescriptor, List<IExpressionAnnotation>> VertexPatternExpression() throws ParseException:
+{
+  SqlppHint[] expectedSqlppHints = { SqlppHint.HASH_JOIN_HINT,
+                                     SqlppHint.INDEXED_NESTED_LOOP_JOIN_HINT,
+                                     SqlppHint.HASH_BROADCAST_JOIN_HINT };
+  Token hintToken = null;
+
+  List<IExpressionAnnotation> annotations = new ArrayList<IExpressionAnnotation>();
+  IExpressionAnnotation exprAnnotation = null;
+  Set<String> vertexLabels = new HashSet<String>();
+  VariableExpr variableExpr = null;
+  Expression filterExpr = null;
+  boolean isNegatedLabelSet = false;
+}
+{
+  <LEFTPAREN>
+  ( variableExpr = Variable() )?
+  (
+    <COLON>
+    ( <CARET> { isNegatedLabelSet = true; } )?
+    vertexLabels = ParenthesizedLabelValueSet()
+  )?
+  ( <WHERE> filterExpr = Expression() )?
+  <RIGHTPAREN>
+  {
+    hintToken = fetchHint(token, expectedSqlppHints);
+    if (hintToken != null) {
+      exprAnnotation = parseExpressionAnnotation(hintToken);
+      if (exprAnnotation != null) {
+        annotations.add(new CorrelationJoinAnnotation(exprAnnotation));
+      }
+    }
+
+    // Construct our label set.
+    Set<ElementLabel> labels = new HashSet<ElementLabel>();
+    for (String vertexLabelValue : vertexLabels) {
+      labels.add(new ElementLabel(vertexLabelValue, isNegatedLabelSet));
+    }
+    return new Pair<VertexDescriptor, List<IExpressionAnnotation>>(
+      new VertexDescriptor(variableExpr, labels, filterExpr),
+      annotations
+    );
+  }
+}
+
+@new
+Pair<EdgeDescriptor, List<IExpressionAnnotation>> EdgePatternExpression() throws ParseException:
+{
+  SqlppHint[] expectedSqlppHints = { SqlppHint.HASH_JOIN_HINT,
+                                     SqlppHint.INDEXED_NESTED_LOOP_JOIN_HINT,
+                                     SqlppHint.HASH_BROADCAST_JOIN_HINT };
+  Token hintToken = null;
+
+  ElementDirection elementDirection = ElementDirection.UNDIRECTED;
+  List<IExpressionAnnotation> annotations = new ArrayList<IExpressionAnnotation>();
+  IExpressionAnnotation exprAnnotation = null;
+  Set<String> edgeLabels = new HashSet<String>();
+  VariableExpr variableExpr = null;
+  Expression filterExpr = null;
+  boolean isNegatedLabelSet = false;
+}
+{
+  (
+    (
+      <MINUS>
+      (
+        <LEFTBRACKET>
+        {
+          hintToken = fetchHint(token, expectedSqlppHints);
+          if (hintToken != null) {
+            exprAnnotation = parseExpressionAnnotation(hintToken);
+            if (exprAnnotation != null) {
+              annotations.add(new LeftLinkJoinAnnotation(exprAnnotation));
+            }
+          }
+        }
+        ( variableExpr = Variable() )?
+        (
+          <COLON>
+          ( <CARET> { isNegatedLabelSet = true; } )?
+          edgeLabels = ParenthesizedLabelValueSet()
+        )?
+        ( <WHERE> filterExpr = Expression() )?
+        <RIGHTBRACKET>
+        <MINUS>
+        {
+          hintToken = fetchHint(token, expectedSqlppHints);
+          if (hintToken != null) {
+            exprAnnotation = parseExpressionAnnotation(hintToken);
+            if (exprAnnotation != null) {
+                annotations.add(new RightLinkJoinAnnotation(exprAnnotation));
+            }
+          }
+        }
+      )?
+      ( <GT> { elementDirection = ElementDirection.LEFT_TO_RIGHT; } )?
+    )
+    |
+    (
+      <LT> { elementDirection = ElementDirection.RIGHT_TO_LEFT; }
+      <MINUS>
+      (
+        <LEFTBRACKET>
+        {
+          hintToken = fetchHint(token, expectedSqlppHints);
+          if (hintToken != null) {
+            exprAnnotation = parseExpressionAnnotation(hintToken);
+            if (exprAnnotation != null) {
+              annotations.add(new LeftLinkJoinAnnotation(exprAnnotation));
+            }
+          }
+        }
+        ( variableExpr = Variable() )?
+        (
+          <COLON>
+          ( <CARET> { isNegatedLabelSet = true; } )?
+          edgeLabels = ParenthesizedLabelValueSet()
+        )?
+        ( <WHERE> filterExpr = Expression() )?
+        <RIGHTBRACKET>
+        <MINUS>
+        {
+          hintToken = fetchHint(token, expectedSqlppHints);
+          if (hintToken != null) {
+            exprAnnotation = parseExpressionAnnotation(hintToken);
+            if (exprAnnotation != null) {
+                annotations.add(new RightLinkJoinAnnotation(exprAnnotation));
+            }
+          }
+        }
+      )?
+    )
+  )
+  {
+    // Construct our label set.
+    Set<ElementLabel> labels = new HashSet<ElementLabel>();
+    for (String edgeLabelValue : edgeLabels) {
+      labels.add(new ElementLabel(edgeLabelValue, isNegatedLabelSet));
+    }
+    return new Pair<EdgeDescriptor, List<IExpressionAnnotation>>(
+      new EdgeDescriptor(elementDirection, variableExpr, labels, filterExpr),
+      annotations
+    );
+  }
+}
+
+@new
+Pair<PathDescriptor, List<IExpressionAnnotation>> PathPatternExpression() throws ParseException:
+{
+  SqlppHint[] expectedSqlppHints = { SqlppHint.HASH_JOIN_HINT,
+                                     SqlppHint.INDEXED_NESTED_LOOP_JOIN_HINT,
+                                     SqlppHint.HASH_BROADCAST_JOIN_HINT };
+  Token hintToken = null;
+
+  ElementDirection elementDirection = ElementDirection.UNDIRECTED;
+  List<IExpressionAnnotation> annotations = new ArrayList<IExpressionAnnotation>();
+  IExpressionAnnotation exprAnnotation = null;
+  Pair<Integer, Integer> repetitionDescriptor = null;
+  Set<String> pathLabels = new HashSet<String>();
+  VariableExpr variableExpr = null;
+  boolean isNegatedLabelSet = false;
+}
+{
+  (
+    (
+      <MINUS>
+      <LEFTBRACKET>
+      {
+        hintToken = fetchHint(token, expectedSqlppHints);
+        if (hintToken != null) {
+          exprAnnotation = parseExpressionAnnotation(hintToken);
+          if (exprAnnotation != null) {
+            annotations.add(new LeftLinkJoinAnnotation(exprAnnotation));
+          }
+        }
+      }
+      ( variableExpr = Variable() )?
+      (
+        <COLON>
+        ( <CARET> { isNegatedLabelSet = true; } )?
+        pathLabels = ParenthesizedLabelValueSet()
+      )?
+      repetitionDescriptor = RepetitionDescriptor()
+      <RIGHTBRACKET>
+      {
+        hintToken = fetchHint(token, expectedSqlppHints);
+        if (hintToken != null) {
+          exprAnnotation = parseExpressionAnnotation(hintToken);
+          if (exprAnnotation != null) {
+            annotations.add(new NavigationJoinAnnotation(exprAnnotation));
+          }
+        }
+      }
+      <MINUS>
+      {
+        hintToken = fetchHint(token, expectedSqlppHints);
+        if (hintToken != null) {
+          exprAnnotation = parseExpressionAnnotation(hintToken);
+          if (exprAnnotation != null) {
+            annotations.add(new RightLinkJoinAnnotation(exprAnnotation));
+          }
+        }
+      }
+      ( <GT> { elementDirection = ElementDirection.LEFT_TO_RIGHT; } )?
+    )
+    |
+    (
+      <LT> { elementDirection = ElementDirection.RIGHT_TO_LEFT; }
+      <MINUS>
+      {
+        hintToken = fetchHint(token, expectedSqlppHints);
+        if (hintToken != null) {
+          exprAnnotation = parseExpressionAnnotation(hintToken);
+          if (exprAnnotation != null) {
+            annotations.add(new LeftLinkJoinAnnotation(exprAnnotation));
+          }
+        }
+      }
+      <LEFTBRACKET>
+      ( variableExpr = Variable() )?
+      (
+        <COLON>
+        ( <CARET> { isNegatedLabelSet = true; } )?
+        pathLabels = ParenthesizedLabelValueSet()
+      )?
+      repetitionDescriptor = RepetitionDescriptor()
+      <RIGHTBRACKET>
+      {
+        hintToken = fetchHint(token, expectedSqlppHints);
+        if (hintToken != null) {
+          exprAnnotation = parseExpressionAnnotation(hintToken);
+          if (exprAnnotation != null) {
+            annotations.add(new NavigationJoinAnnotation(exprAnnotation));
+          }
+        }
+      }
+      <MINUS>
+      {
+        hintToken = fetchHint(token, expectedSqlppHints);
+        if (hintToken != null) {
+          exprAnnotation = parseExpressionAnnotation(hintToken);
+          if (exprAnnotation != null) {
+            annotations.add(new RightLinkJoinAnnotation(exprAnnotation));
+          }
+        }
+      }
+    )
+  )
+  {
+    // Construct our label set.
+    Set<ElementLabel> labels = new HashSet<ElementLabel>();
+    for (String pathLabelValue : pathLabels) {
+      labels.add(new ElementLabel(pathLabelValue, isNegatedLabelSet));
+    }
+    PathDescriptor pathDescriptor = new PathDescriptor(
+      elementDirection, variableExpr, labels, repetitionDescriptor.first, repetitionDescriptor.second
+    );
+
+    // Return our path.
+    return new Pair<PathDescriptor, List<IExpressionAnnotation>>(pathDescriptor, annotations);
+  }
+}
+
+@new
+Set<String> ParenthesizedLabelValueSet() throws ParseException:
+{
+  Set<String> labelSet = new HashSet<String>();
+  Set<String> innerLabelSet = null;
+  String labelName = null;
+}
+{
+  (
+    ( labelName = Identifier() { labelSet.add(labelName); } )
+    |
+    (
+      <LEFTPAREN>
+      innerLabelSet = ParenthesizedLabelValueSet() { labelSet.addAll(innerLabelSet); }
+      (
+        <BAR>
+        innerLabelSet = ParenthesizedLabelValueSet() { labelSet.addAll(innerLabelSet); }
+      )*
+      <RIGHTPAREN>
+    )
+  )
+  {
+    return labelSet;
+  }
+}
+
+@new
+Pair<Integer, Integer> RepetitionDescriptor() throws ParseException:
+{
+  Integer hopCountMin = null;
+  Integer hopCountMax = null;
+}
+{
+  (
+    <PLUS> { hopCountMin = 1; }
+    |
+    <MUL> { hopCountMin = 0; }
+    |
+    (
+      <LEFTBRACE>
+      ( <INTEGER_LITERAL> { hopCountMin = Integer.valueOf(token.image); } )?
+      <COMMA>
+      ( <INTEGER_LITERAL> { hopCountMax = Integer.valueOf(token.image); } )?
+      <RIGHTBRACE>
+    )
+  )
+  {
+    return new Pair<Integer, Integer>(hopCountMin, hopCountMax);
+  }
+}
+
+@new
+<DEFAULT,IN_DBL_BRACE>
+TOKEN [IGNORE_CASE]:
+{
+  <DESTINATION: "destination">
+  | <EDGE: "edge">
+  | <GRAPH: "graph">
+  | <SOURCE: "source">
+  | <VERTEX: "vertex">
+  | <MATCH: "match">
+}
+
+@new_at_the_end
+<DEFAULT,IN_DBL_BRACE>
+TOKEN :
+{
+  <BAR: "|">
+}

@@ -1,0 +1,20 @@
+distribute result [$$40] [cardinality: 0.0, op-cost: 0.0, total-cost: 0.0]
+-- DISTRIBUTE_RESULT  |PARTITIONED|
+  exchange [cardinality: 0.0, op-cost: 0.0, total-cost: 0.0]
+  -- ONE_TO_ONE_EXCHANGE  |PARTITIONED|
+    project ([$$40]) [cardinality: 0.0, op-cost: 0.0, total-cost: 0.0]
+    -- STREAM_PROJECT  |PARTITIONED|
+      assign [$$40] <- [{"messageCreationDate": unix-time-from-datetime-in-ms($COPY_OF(message,1).getField(2)), "messageContent": if-missing-or-null($COPY_OF(message,1).getField(6), $COPY_OF(message,1).getField(1))}] [cardinality: 0.0, op-cost: 0.0, total-cost: 0.0]
+      -- ASSIGN  |PARTITIONED|
+        project ([$COPY_OF(message,1)]) [cardinality: 0.0, op-cost: 0.0, total-cost: 0.0]
+        -- STREAM_PROJECT  |PARTITIONED|
+          exchange [cardinality: 0.0, op-cost: 0.0, total-cost: 0.0]
+          -- ONE_TO_ONE_EXCHANGE  |PARTITIONED|
+            unnest-map [$$41, $COPY_OF(message,1)] <- index-search("Messages", 0, "SNB/Native", "Messages", false, false, 1, $$46, 1, $$47, true, true, true) [cardinality: 0.0, op-cost: 0.0, total-cost: 0.0]
+            -- BTREE_SEARCH  |PARTITIONED|
+              exchange [cardinality: 0.0, op-cost: 0.0, total-cost: 0.0]
+              -- ONE_TO_ONE_EXCHANGE  |PARTITIONED|
+                assign [$$46, $$47] <- [962072677938, 962072677938] [cardinality: 0.0, op-cost: 0.0, total-cost: 0.0]
+                -- ASSIGN  |PARTITIONED|
+                  empty-tuple-source [cardinality: 0.0, op-cost: 0.0, total-cost: 0.0]
+                  -- EMPTY_TUPLE_SOURCE  |PARTITIONED|

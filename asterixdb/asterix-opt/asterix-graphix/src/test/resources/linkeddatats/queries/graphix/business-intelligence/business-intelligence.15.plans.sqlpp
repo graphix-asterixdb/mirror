@@ -1,0 +1,88 @@
+/*
+ * Licensed to the Apache Software Foundation (ASF) under one
+ * or more contributor license agreements.  See the NOTICE file
+ * distributed with this work for additional information
+ * regarding copyright ownership.  The ASF licenses this file
+ * to you under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance
+ * with the License.  You may obtain a copy of the License at
+ *
+ *   http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing,
+ * software distributed under the License is distributed on an
+ * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ * KIND, either express or implied.  See the License for the
+ * specific language governing permissions and limitations
+ * under the License.
+ */
+SET `graphix.compiler.permit.unbounded-all-paths` "true";
+
+-- param compile-only:string=true
+-- param optimized-logical-plan:string=true
+-- param plan-format:string=string
+
+// Note: this only tests part of the BI-15.
+EXPLAIN
+FROM
+    GRAPH SNB.Native.SNBGraph
+            (personA:Person)-[:KNOWS]->(personB:Person)
+    LET
+        w1 = (
+            FROM
+                GRAPH SNB.Native.SNBGraph
+                    (personA)<-[:HAS_CREATOR]-(comment:Message)-[:REPLY_OF]->(post:Message),
+                    (post)-[:HAS_CREATOR]->(personB),
+                    (post)<-[:CONTAINER_OF]-(forum:Forum)
+            WHERE
+                NOT comment.isPost AND
+                post.isPost AND
+                forum.creationDate BETWEEN DATETIME("2012-12-15T00:00:00.000Z") AND DATETIME("2013-03-17T00:00:00.000Z")
+            SELECT VALUE
+                COUNT(comment)
+        )[0],
+        w2 = (
+            FROM
+                GRAPH SNB.Native.SNBGraph
+                    (personA)<-[:HAS_CREATOR]-(post:Message)<-[:REPLY_OF]-(comment:Message),
+                    (comment)-[:HAS_CREATOR]->(personB),
+                    (post)<-[:CONTAINER_OF]-(forum:Forum)
+            WHERE
+                NOT comment.isPost AND
+                post.isPost AND
+                forum.creationDate BETWEEN DATETIME("2012-12-15T00:00:00.000Z") AND DATETIME("2013-03-17T00:00:00.000Z")
+            SELECT VALUE
+                COUNT(comment)
+        )[0],
+        w3 = (
+            FROM
+                GRAPH SNB.Native.SNBGraph
+                    (personA)<-[:HAS_CREATOR]-(c1:Message)-[:REPLY_OF]->(c2:Message),
+                    (c2)-[:HAS_CREATOR]->(personB),
+                    (c2)-[:REPLY_OF+]->(post:Message)<-[:CONTAINER_OF]-(forum:Forum)
+            WHERE
+                NOT c1.isPost AND
+                NOT c2.isPost AND
+                post.isPost AND
+                forum.creationDate BETWEEN DATETIME("2012-12-15T00:00:00.000Z") AND DATETIME("2013-03-17T00:00:00.000Z")
+            SELECT VALUE
+                COUNT(c1)
+        )[0],
+        w4 = (
+            FROM
+                GRAPH SNB.Native.SNBGraph
+                    (personA)<-[:HAS_CREATOR]-(c2:Message)<-[:REPLY_OF]-(c1:Message),
+                    (c1)-[:HAS_CREATOR]->(personB),
+                    (c2)-[:REPLY_OF+]->(post:Message)<-[:CONTAINER_OF]-(forum:Forum)
+            WHERE
+                NOT c1.isPost AND
+                NOT c2.isPost AND
+                post.isPost AND
+                forum.creationDate BETWEEN DATETIME("2012-12-15T00:00:00.000Z") AND DATETIME("2013-03-17T00:00:00.000Z")
+            SELECT VALUE
+                COUNT(c1)
+        )[0]
+SELECT
+    personA.id                                AS startId,
+    personB.id                                AS endId,
+    1.0 / (w1 + w2 + ( 0.5 * (w3 + w4) ) + 1) AS weight;

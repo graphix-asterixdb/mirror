@@ -1,0 +1,6 @@
+{ "r_review_id": "A", "edge_type": "REVIEW_RELATED_TO_USER", "v_label": "User" }
+{ "r_review_id": "B", "edge_type": "REVIEW_RELATED_TO_USER", "v_label": "User" }
+{ "r_review_id": "C", "edge_type": "REVIEW_RELATED_TO_USER", "v_label": "User" }
+{ "r_review_id": "D", "edge_type": "REVIEW_RELATED_TO_USER", "v_label": "User" }
+{ "r_review_id": "E", "edge_type": "REVIEW_RELATED_TO_USER", "v_label": "User" }
+{ "r_review_id": "F", "edge_type": "REVIEW_RELATED_TO_USER", "v_label": "User" }

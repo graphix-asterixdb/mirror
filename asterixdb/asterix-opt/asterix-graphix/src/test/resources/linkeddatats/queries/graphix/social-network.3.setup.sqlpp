@@ -1,0 +1,181 @@
+/*
+ * Licensed to the Apache Software Foundation (ASF) under one
+ * or more contributor license agreements.  See the NOTICE file
+ * distributed with this work for additional information
+ * regarding copyright ownership.  The ASF licenses this file
+ * to you under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance
+ * with the License.  You may obtain a copy of the License at
+ *
+ *   http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing,
+ * software distributed under the License is distributed on an
+ * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ * KIND, either express or implied.  See the License for the
+ * specific language governing permissions and limitations
+ * under the License.
+ */
+
+//
+// This script defines the mapping of our internal datasets to a the property graph "SNB.Native.SNBGraph".
+//
+
+USE SNB.Native;
+DROP GRAPH SNBGraph IF EXISTS;
+CREATE GRAPH SNBGraph AS
+    VERTEX (:Message)
+        PRIMARY KEY (id)
+        AS Messages,
+    VERTEX (:Forum)
+        PRIMARY KEY (id)
+        AS Forums,
+    VERTEX (:Person)
+        PRIMARY KEY (id)
+        AS Persons,
+    VERTEX (:Tag)
+        PRIMARY KEY (id)
+        AS Tags,
+    VERTEX (:TagClass)
+        PRIMARY KEY (id)
+        AS TagClasses,
+    VERTEX (:University)
+        PRIMARY KEY (id)
+        AS Universities,
+    VERTEX (:Company)
+        PRIMARY KEY (id)
+        AS Companies,
+    VERTEX (:City)
+        PRIMARY KEY (id)
+        AS Cities,
+    VERTEX (:Country)
+        PRIMARY KEY (id)
+        AS Countries,
+    VERTEX (:Continent)
+        PRIMARY KEY (id)
+        AS Continents,
+
+    EDGE (:Message)-[:REPLY_OF]->(:Message)
+        SOURCE KEY      (id)
+        DESTINATION KEY (replyOfMessageId)
+        AS (
+            FROM
+                Messages m
+            SELECT
+                m.id               AS id,
+                m.replyOfMessageId AS replyOfMessageId
+        ),
+    EDGE (:Message)-[:HAS_CREATOR]->(:Person)
+        SOURCE KEY      (id)
+        DESTINATION KEY (creatorId)
+        AS ( FROM Messages SELECT id, creatorId ),
+    EDGE (:Message)-[:IS_LOCATED_IN]->(:Country)
+        SOURCE KEY      (id)
+        DESTINATION KEY (placeId)
+        AS ( FROM Messages SELECT id, placeId ),
+    EDGE (:Message)-[:HAS_TAG]->(:Tag)
+        SOURCE KEY      (id)
+        DESTINATION KEY (tagId)
+        AS (
+            FROM
+                Messages m,
+                m.tags tagId
+            SELECT
+                m.id  AS id,
+                tagId AS tagId
+        ),
+    EDGE (:Forum)-[:CONTAINER_OF]->(:Message)
+        SOURCE KEY      (forumId)
+        DESTINATION KEY (id)
+        AS (
+            FROM
+                Messages m
+            WHERE
+                m.isPost
+            SELECT
+                m.id      AS id,
+                m.forumId AS forumId
+        ),
+    EDGE (:Forum)-[:HAS_MODERATOR]->(:Person)
+        SOURCE KEY      (id)
+        DESTINATION KEY (moderatorId)
+        AS ( FROM Forums SELECT id, moderatorId ),
+    EDGE (:Forum)-[:HAS_MEMBER]->(:Person)
+        SOURCE KEY      (forumId)
+        DESTINATION KEY (personId)
+        AS ( FROM ForumPerson fp SELECT VALUE fp ),
+    EDGE (:Forum)-[:HAS_TAG]->(:Tag)
+        SOURCE KEY      (id)
+        DESTINATION KEY (tagId)
+        AS (
+            FROM
+                Forums f,
+                f.tags tagId
+            SELECT
+                f.id  AS id,
+                tagId AS tagId
+        ),
+    EDGE (:Person)-[:KNOWS]->(:Person)
+        SOURCE KEY      (startId)
+        DESTINATION KEY (endId)
+        AS ( FROM Knows k SELECT VALUE k ),
+    EDGE (:Person)-[:HAS_INTEREST]->(:Tag)
+        SOURCE KEY      (personId)
+        DESTINATION KEY (tagId)
+        AS ( FROM PersonTag pt SELECT VALUE pt ),
+    EDGE (:Person)-[:IS_LOCATED_IN]->(:City)
+        SOURCE KEY      (id)
+        DESTINATION KEY (placeId)
+        AS ( FROM Persons SELECT id, placeId ),
+    EDGE (:Person)-[:STUDY_AT]->(:University)
+        SOURCE KEY      (id)
+        DESTINATION KEY (organizationId)
+        AS (
+            FROM
+                Persons p,
+                p.universities u
+            SELECT
+                p.id             AS id,
+                u.organizationId AS organizationId,
+                u.classYear      AS classYear
+        ),
+    EDGE (:Person)-[:WORK_AT]->(:Company)
+        SOURCE KEY      (id)
+        DESTINATION KEY (organizationId)
+        AS (
+            FROM
+                Persons p,
+                p.companies c
+            SELECT
+                p.id             AS id,
+                c.organizationId AS organizationId,
+                c.workFrom       AS workFrom
+        ),
+    EDGE (:Person)-[:LIKES]->(:Message)
+        SOURCE KEY      (personId)
+        DESTINATION KEY (messageId)
+        AS ( FROM Likes l SELECT VALUE l ),
+    EDGE (:Tag)-[:HAS_TYPE]->(:TagClass)
+        SOURCE KEY      (id)
+        DESTINATION KEY (tagClassId)
+        AS ( FROM Tags SELECT id, tagClassId ),
+    EDGE (:TagClass)-[:IS_SUBCLASS_OF]->(:TagClass)
+        SOURCE KEY      (id)
+        DESTINATION KEY (isSubclassOf)
+        AS ( FROM TagClasses SELECT id, isSubclassOf ),
+    EDGE (:University)-[:IS_LOCATED_IN]->(:City)
+        SOURCE KEY      (id)
+        DESTINATION KEY (placeId)
+        AS ( FROM Universities SELECT id, placeId ),
+    EDGE (:Company)-[:IS_LOCATED_IN]->(:Country)
+        SOURCE KEY      (id)
+        DESTINATION KEY (placeId)
+        AS ( FROM Companies SELECT id, placeId ),
+    EDGE (:City)-[:IS_PART_OF]->(:Country)
+        SOURCE KEY      (id)
+        DESTINATION KEY (containerId)
+        AS ( FROM Cities SELECT id, containerId ),
+    EDGE (:Country)-[:IS_PART_OF]->(:Continent)
+        SOURCE KEY      (id)
+        DESTINATION KEY (containerId)
+        AS ( FROM Countries SELECT id, containerId );

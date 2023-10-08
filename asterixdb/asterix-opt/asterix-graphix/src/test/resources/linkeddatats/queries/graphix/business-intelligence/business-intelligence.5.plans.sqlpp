@@ -1,0 +1,51 @@
+/*
+ * Licensed to the Apache Software Foundation (ASF) under one
+ * or more contributor license agreements.  See the NOTICE file
+ * distributed with this work for additional information
+ * regarding copyright ownership.  The ASF licenses this file
+ * to you under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance
+ * with the License.  You may obtain a copy of the License at
+ *
+ *   http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing,
+ * software distributed under the License is distributed on an
+ * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ * KIND, either express or implied.  See the License for the
+ * specific language governing permissions and limitations
+ * under the License.
+ */
+SET `graphix.evaluation.prefer-indexnl` "true";
+
+-- param compile-only:string=true
+-- param optimized-logical-plan:string=true
+-- param plan-format:string=string
+
+EXPLAIN
+FROM
+    GRAPH SNB.Native.SNBGraph
+        (tag:Tag)<-[:HAS_TAG]-(m:Message)-[:HAS_CREATOR]->(person:Person)
+    LEFT MATCH
+        (liker:Person)-[:LIKES]->(m)
+    LEFT MATCH
+        (comment:Message)-[:REPLY_OF]->(m)
+WHERE
+    tag.name = "Slovenia"
+GROUP BY
+    person.id AS personId
+LET
+    messageCount = COUNT(DISTINCT m.id),
+    likeCount    = COUNT(DISTINCT liker.id),
+    replyCount   = COUNT(DISTINCT comment.id)
+SELECT
+    personId                                           AS personId,
+    replyCount                                         AS replyCount,
+    likeCount                                          AS likeCount,
+    messageCount                                       AS messageCount,
+    ( messageCount + 2 * replyCount + 10 * likeCount ) AS score
+ORDER BY
+    score DESC,
+    personId ASC
+LIMIT
+    100;

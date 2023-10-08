@@ -1,0 +1,130 @@
+/*
+ * Licensed to the Apache Software Foundation (ASF) under one
+ * or more contributor license agreements.  See the NOTICE file
+ * distributed with this work for additional information
+ * regarding copyright ownership.  The ASF licenses this file
+ * to you under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance
+ * with the License.  You may obtain a copy of the License at
+ *
+ *   http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing,
+ * software distributed under the License is distributed on an
+ * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ * KIND, either express or implied.  See the License for the
+ * specific language governing permissions and limitations
+ * under the License.
+ */
+
+//
+// This script is used to define our internal / fully managed datasets, in the "SNB.Native" dataverse.
+//
+
+DROP DATAVERSE SNB.Native IF EXISTS;
+CREATE DATAVERSE SNB.Native;
+USE SNB.Native;
+
+CREATE TYPE MessageType AS {
+    id               : bigint,
+    imageFile        : string?,
+    creationDate     : datetime?,
+    locationIP       : string,
+    browserUsed      : string,
+    language         : string?,
+    content          : string?,
+    length           : int,
+    creatorId        : bigint,
+    forumId          : bigint?,
+    placeId          : bigint,
+    replyOfMessageId : bigint?,
+    isPost           : boolean,
+    tags             : [bigint]
+};
+CREATE TYPE ForumType AS {
+    id           : bigint,
+    title        : string,
+    creationDate : datetime,
+    moderatorId  : bigint?,
+    tags         : [bigint]
+};
+CREATE TYPE PersonType AS {
+    id           : bigint,
+    firstName    : string,
+    lastName     : string,
+    gender       : string,
+    birthday     : date,
+    creationDate : datetime,
+    locationIP   : string,
+    browserUsed  : string,
+    placeId      : bigint,
+    language     : [string],
+    email        : [string],
+    universities : [{
+        organizationId : bigint,
+        classYear      : int
+    }],
+    companies    : [{
+        organizationId : bigint,
+        workFrom       : int
+    }]
+};
+CREATE TYPE KnowsType AS {
+    startId      : bigint,
+    endId        : bigint,
+    creationDate : datetime
+};
+CREATE TYPE LikesType AS {
+    personId     : bigint,
+    messageId    : bigint,
+    creationDate : datetime
+};
+CREATE TYPE PersonTagType AS {
+    personId     : bigint,
+    tagId        : bigint,
+    creationDate : datetime
+};
+CREATE TYPE ForumPersonType AS {
+    forumId  : bigint,
+    personId : bigint,
+    joinDate : datetime
+};
+CREATE TYPE TagType AS {
+    id         : bigint,
+    name       : string,
+    url        : string,
+    tagClassId : bigint
+};
+CREATE TYPE TagClassType AS {
+    id           : bigint,
+    name         : string,
+    url          : string,
+    isSubclassOf : bigint?
+};
+CREATE TYPE OrganizationType AS {
+    id      : bigint,
+    name    : string,
+    url     : string,
+    placeId : bigint
+};
+CREATE TYPE LocationType AS {
+    id          : bigint,
+    name        : string,
+    url         : string,
+    containerId : bigint?
+};
+
+CREATE DATASET Messages (MessageType) PRIMARY KEY id;
+CREATE DATASET Forums (ForumType) PRIMARY KEY id;
+CREATE DATASET Persons (PersonType) PRIMARY KEY id;
+CREATE DATASET Knows (KnowsType) PRIMARY KEY startId, endId;
+CREATE DATASET Likes (LikesType) PRIMARY KEY personId, messageId;
+CREATE DATASET PersonTag (PersonTagType) PRIMARY KEY personId, tagId;
+CREATE DATASET ForumPerson (ForumPersonType) PRIMARY KEY forumId, personId;
+CREATE DATASET Tags (TagType) PRIMARY KEY id;
+CREATE DATASET TagClasses (TagClassType) PRIMARY KEY id;
+CREATE DATASET Universities (OrganizationType) PRIMARY KEY id;
+CREATE DATASET Companies (OrganizationType) PRIMARY KEY id;
+CREATE DATASET Cities (LocationType) PRIMARY KEY id;
+CREATE DATASET Countries (LocationType) PRIMARY KEY id;
+CREATE DATASET Continents (LocationType) PRIMARY KEY id;

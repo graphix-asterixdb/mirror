@@ -1,0 +1,11 @@
+{ "u1_user_id": 1, "u2_user_id": 2, "u3_user_id": 3, "hops": 1 }
+{ "u1_user_id": 1, "u2_user_id": 2, "u3_user_id": 4, "hops": 2 }
+{ "u1_user_id": 1, "u2_user_id": 3, "u3_user_id": 2, "hops": 3 }
+{ "u1_user_id": 1, "u2_user_id": 3, "u3_user_id": 4, "hops": 1 }
+{ "u1_user_id": 2, "u2_user_id": 3, "u3_user_id": 1, "hops": 2 }
+{ "u1_user_id": 2, "u2_user_id": 3, "u3_user_id": 4, "hops": 1 }
+{ "u1_user_id": 3, "u2_user_id": 4, "u3_user_id": 1, "hops": 1 }
+{ "u1_user_id": 3, "u2_user_id": 4, "u3_user_id": 2, "hops": 2 }
+{ "u1_user_id": 4, "u2_user_id": 1, "u3_user_id": 2, "hops": 1 }
+{ "u1_user_id": 4, "u2_user_id": 1, "u3_user_id": 3, "hops": 1 }
+{ "u1_user_id": 4, "u2_user_id": 1, "u3_user_id": 3, "hops": 2 }

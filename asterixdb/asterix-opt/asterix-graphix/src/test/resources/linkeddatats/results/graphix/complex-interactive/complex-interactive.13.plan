@@ -1,0 +1,110 @@
+distribute result [$$411] [cardinality: 0.0, op-cost: 0.0, total-cost: 0.0]
+-- DISTRIBUTE_RESULT  |PARTITIONED|
+  exchange [cardinality: 0.0, op-cost: 0.0, total-cost: 0.0]
+  -- ONE_TO_ONE_EXCHANGE  |PARTITIONED|
+    project ([$$411]) [cardinality: 0.0, op-cost: 0.0, total-cost: 0.0]
+    -- STREAM_PROJECT  |PARTITIONED|
+      assign [$$411] <- [if-missing-or-null(get-item($$407, 0), -1)] [cardinality: 0.0, op-cost: 0.0, total-cost: 0.0]
+      -- ASSIGN  |PARTITIONED|
+        project ([$$407]) [cardinality: 0.0, op-cost: 0.0, total-cost: 0.0]
+        -- STREAM_PROJECT  |PARTITIONED|
+          exchange [cardinality: 0.0, op-cost: 0.0, total-cost: 0.0]
+          -- ONE_TO_ONE_EXCHANGE  |PARTITIONED|
+            group by ([$$id := $$418; $#1 := $$422]) decor ([]) {
+                      aggregate [$$407] <- [listify($$403)] [cardinality: 0.0, op-cost: 0.0, total-cost: 0.0]
+                      -- AGGREGATE  |LOCAL|
+                        limit 1 [cardinality: 0.0, op-cost: 0.0, total-cost: 0.0]
+                        -- STREAM_LIMIT  |LOCAL|
+                          order (ASC, $$403) [cardinality: 0.0, op-cost: 0.0, total-cost: 0.0]
+                          -- MICRO_STABLE_SORT [$$403(ASC)]  |LOCAL|
+                            assign [$$403] <- [optimized-edge-count($COPY_OF(k,6))] [cardinality: 0.0, op-cost: 0.0, total-cost: 0.0]
+                            -- ASSIGN  |LOCAL|
+                              nested tuple source [cardinality: 0.0, op-cost: 0.0, total-cost: 0.0]
+                              -- NESTED_TUPLE_SOURCE  |LOCAL|
+                   } [cardinality: 0.0, op-cost: 0.0, total-cost: 0.0]
+            -- PRE_CLUSTERED_GROUP_BY[$$418, $$422]  |PARTITIONED|
+              exchange [cardinality: 0.0, op-cost: 0.0, total-cost: 0.0]
+              -- ONE_TO_ONE_EXCHANGE  |PARTITIONED|
+                order (ASC, $$418) (ASC, $$422) [cardinality: 0.0, op-cost: 0.0, total-cost: 0.0]
+                -- STABLE_SORT [$$418(ASC), $$422(ASC)]  |PARTITIONED|
+                  exchange [cardinality: 0.0, op-cost: 0.0, total-cost: 0.0]
+                  -- HASH_PARTITION_EXCHANGE [$$418, $$422]  |PARTITIONED|
+                    select (not(eq($$418, $$422))) [cardinality: 0.0, op-cost: 0.0, total-cost: 0.0]
+                    -- STREAM_SELECT  |PARTITIONED|
+                      select (eq($$422, 8796093022249)) [cardinality: 0.0, op-cost: 0.0, total-cost: 0.0]
+                      -- STREAM_SELECT  |PARTITIONED|
+                        project ([$COPY_OF(k,6), $$418, $$422]) [cardinality: 0.0, op-cost: 0.0, total-cost: 0.0]
+                        -- STREAM_PROJECT  |PARTITIONED|
+                          exchange [cardinality: 0.0, op-cost: 0.0, total-cost: 0.0]
+                          -- ONE_TO_ONE_EXCHANGE  |PARTITIONED|
+                            unnest-map [$$422, $COPY_OF(person2,5)] <- index-search("Persons", 0, "SNB/Native", "Persons", true, true, 1, $$426, 1, $$426, true, true, true) [cardinality: 0.0, op-cost: 0.0, total-cost: 0.0]
+                            -- BTREE_SEARCH  |PARTITIONED|
+                              exchange [cardinality: 0.0, op-cost: 0.0, total-cost: 0.0]
+                              -- ONE_TO_ONE_EXCHANGE  |PARTITIONED|
+                                order (ASC, $$426) [cardinality: 0.0, op-cost: 0.0, total-cost: 0.0]
+                                -- STABLE_SORT [$$426(ASC)]  |PARTITIONED|
+                                  exchange [cardinality: 0.0, op-cost: 0.0, total-cost: 0.0]
+                                  -- HASH_PARTITION_EXCHANGE [$$426]  |PARTITIONED|
+                                    project ([$COPY_OF(k,6), $$418, $$426]) [cardinality: 0.0, op-cost: 0.0, total-cost: 0.0]
+                                    -- STREAM_PROJECT  |PARTITIONED|
+                                      assign [$$426] <- [$COPY_OF(person2,3).getField(0)] [cardinality: 0.0, op-cost: 0.0, total-cost: 0.0]
+                                      -- ASSIGN  |PARTITIONED|
+                                        select (ge(optimized-edge-count($COPY_OF(k,6)), 1)) [cardinality: 0.0, op-cost: 0.0, total-cost: 0.0]
+                                        -- STREAM_SELECT  |PARTITIONED|
+                                          marker-sink [cardinality: 0.0, op-cost: 0.0, total-cost: 0.0]
+                                          -- MARKER_SINK  |PARTITIONED|
+                                            exchange [cardinality: 0.0, op-cost: 0.0, total-cost: 0.0]
+                                            -- STATE_RELEASE (ONE_TO_ONE_EXCHANGE)  |PARTITIONED|
+                                              recursive-head [$COPY_OF(k,3) <- $COPY_OF(k,6),$#2 <- $COPY_OF(person2,3)] [cardinality: 0.0, op-cost: 0.0, total-cost: 0.0]
+                                              -- RECURSIVE_HEAD  |PARTITIONED|
+                                                exchange [cardinality: 0.0, op-cost: 0.0, total-cost: 0.0]
+                                                -- STATE_RELEASE (ONE_TO_ONE_EXCHANGE)  |PARTITIONED|
+                                                  project ([$COPY_OF(person2,3), $COPY_OF(k,6), $$418]) [cardinality: 0.0, op-cost: 0.0, total-cost: 0.0]
+                                                  -- STATE_RELEASE (STREAM_PROJECT)  |PARTITIONED|
+                                                    exchange [cardinality: 0.0, op-cost: 0.0, total-cost: 0.0]
+                                                    -- STATE_RELEASE (ONE_TO_ONE_EXCHANGE)  |PARTITIONED|
+                                                      fixed-point [$COPY_OF(person2,3) <- ($COPY_OF(person1,2),$COPY_OF(#3,1)) $COPY_OF(k,6) <- ($COPY_OF(k,2),$COPY_OF(k,4))] {
+                                                                exchange [cardinality: 0.0, op-cost: 0.0, total-cost: 0.0]
+                                                                -- STATE_RELEASE (ONE_TO_ONE_EXCHANGE)  |PARTITIONED|
+                                                                  project ([$COPY_OF(#3,1), $COPY_OF(k,4), $$418]) [cardinality: 0.0, op-cost: 0.0, total-cost: 0.0]
+                                                                  -- STATE_RELEASE (STREAM_PROJECT)  |PARTITIONED|
+                                                                    distinct ([$$418, $$421, optimized-edge-count($COPY_OF(k,4))]) [cardinality: 0.0, op-cost: 0.0, total-cost: 0.0]
+                                                                    -- STATE_RELEASE (LOCAL_TOP_K)  |PARTITIONED|
+                                                                      exchange [cardinality: 0.0, op-cost: 0.0, total-cost: 0.0]
+                                                                      -- STATE_RELEASE (HASH_PARTITION_EXCHANGE [$$418, $$421])  |PARTITIONED|
+                                                                        assign [$COPY_OF(k,4)] <- [append-to-existing-path($COPY_OF(#3,1), $COPY_OF(#4,1), $COPY_OF(k,3))] [cardinality: 0.0, op-cost: 0.0, total-cost: 0.0]
+                                                                        -- STATE_RELEASE (ASSIGN)  |PARTITIONED|
+                                                                          select (is-distinct-everything($COPY_OF(#3,1), $COPY_OF(#4,1), $COPY_OF(k,3))) [cardinality: 0.0, op-cost: 0.0, total-cost: 0.0]
+                                                                          -- STATE_RELEASE (STREAM_SELECT)  |PARTITIONED|
+                                                                            exchange [cardinality: 0.0, op-cost: 0.0, total-cost: 0.0]
+                                                                            -- STATE_RELEASE (ONE_TO_ONE_EXCHANGE)  |PARTITIONED|
+                                                                              unnest-map [$$421, $COPY_OF(#3,1)] <- index-search("Persons", 0, "SNB/Native", "Persons", true, true, 1, $$420, 1, $$420, true, true, true) [cardinality: 0.0, op-cost: 0.0, total-cost: 0.0]
+                                                                              -- STATE_RELEASE (BTREE_SEARCH)  |PARTITIONED|
+                                                                                exchange [cardinality: 0.0, op-cost: 0.0, total-cost: 0.0]
+                                                                                -- STATE_RELEASE (HASH_PARTITION_EXCHANGE [$$420])  |PARTITIONED|
+                                                                                  unnest-map [$$419, $$420, $COPY_OF(#4,1)] <- index-search("Knows", 0, "SNB/Native", "Knows", true, true, 1, $$428, 1, $$428, true, true, true) [cardinality: 0.0, op-cost: 0.0, total-cost: 0.0]
+                                                                                  -- STATE_RELEASE (BTREE_SEARCH)  |PARTITIONED|
+                                                                                    exchange [cardinality: 0.0, op-cost: 0.0, total-cost: 0.0]
+                                                                                    -- STATE_RELEASE (BROADCAST_EXCHANGE)  |PARTITIONED|
+                                                                                      assign [$$428] <- [$#2.getField(0)] [cardinality: 0.0, op-cost: 0.0, total-cost: 0.0]
+                                                                                      -- STATE_RELEASE (ASSIGN)  |PARTITIONED|
+                                                                                        recursive-tail [$#2 <- ($COPY_OF(person1,2),$COPY_OF(person2,3)), $COPY_OF(k,3) <- ($COPY_OF(k,2),$COPY_OF(k,6))] [cardinality: 0.0, op-cost: 0.0, total-cost: 0.0]
+                                                                                        -- RECURSIVE_TAIL  |PARTITIONED|
+                                                             } [cardinality: 0.0, op-cost: 0.0, total-cost: 0.0]
+                                                      -- FIXED_POINT  |PARTITIONED|
+                                                        exchange [cardinality: 0.0, op-cost: 0.0, total-cost: 0.0]
+                                                        -- ONE_TO_ONE_EXCHANGE  |PARTITIONED|
+                                                          project ([$COPY_OF(person1,2), $COPY_OF(k,2), $$418]) [cardinality: 0.0, op-cost: 0.0, total-cost: 0.0]
+                                                          -- STREAM_PROJECT  |PARTITIONED|
+                                                            assign [$COPY_OF(k,2)] <- [create-new-zero-hop-path($COPY_OF(person1,2))] [cardinality: 0.0, op-cost: 0.0, total-cost: 0.0]
+                                                            -- ASSIGN  |PARTITIONED|
+                                                              exchange [cardinality: 0.0, op-cost: 0.0, total-cost: 0.0]
+                                                              -- ONE_TO_ONE_EXCHANGE  |PARTITIONED|
+                                                                unnest-map [$$418, $COPY_OF(person1,2)] <- index-search("Persons", 0, "SNB/Native", "Persons", false, false, 1, $$434, 1, $$435, true, true, true) [cardinality: 0.0, op-cost: 0.0, total-cost: 0.0]
+                                                                -- BTREE_SEARCH  |PARTITIONED|
+                                                                  exchange [cardinality: 0.0, op-cost: 0.0, total-cost: 0.0]
+                                                                  -- ONE_TO_ONE_EXCHANGE  |PARTITIONED|
+                                                                    assign [$$434, $$435] <- [14, 14] [cardinality: 0.0, op-cost: 0.0, total-cost: 0.0]
+                                                                    -- ASSIGN  |PARTITIONED|
+                                                                      empty-tuple-source [cardinality: 0.0, op-cost: 0.0, total-cost: 0.0]
+                                                                      -- EMPTY_TUPLE_SOURCE  |PARTITIONED|

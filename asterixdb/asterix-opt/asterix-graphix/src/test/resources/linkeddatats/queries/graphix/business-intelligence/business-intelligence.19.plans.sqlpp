@@ -1,0 +1,84 @@
+/*
+ * Licensed to the Apache Software Foundation (ASF) under one
+ * or more contributor license agreements.  See the NOTICE file
+ * distributed with this work for additional information
+ * regarding copyright ownership.  The ASF licenses this file
+ * to you under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance
+ * with the License.  You may obtain a copy of the License at
+ *
+ *   http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing,
+ * software distributed under the License is distributed on an
+ * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ * KIND, either express or implied.  See the License for the
+ * specific language governing permissions and limitations
+ * under the License.
+ */
+
+-- param compile-only:string=true
+-- param optimized-logical-plan:string=true
+-- param plan-format:string=string
+
+EXPLAIN
+WITH
+    GRAPH BIGraph19 AS
+        VERTEX (:Person)
+            PRIMARY KEY (id)
+            AS SNB.Native.Persons,
+        EDGE (:Person)-[:KNOWS]->(:Person)
+            SOURCE KEY      (startId)
+            DESTINATION KEY (endId)
+            AS (
+                FROM
+                    SNB.Native.Messages m1,
+                    SNB.Native.Messages m2,
+                    SNB.Native.Knows k
+                WHERE
+                    k.startId = m1.creatorId AND
+                    k.endId = m2.creatorId AND
+                    ( m1.replyOfMessageId = m2.id OR
+                      m2.replyOfMessageId = m1.id )
+                GROUP BY
+                    k.startId AS aid,
+                    k.endId AS bid
+                SELECT
+                    aid            AS startId,
+                    bid            AS endId,
+                    1.0 / COUNT(*) AS weight
+            )
+FROM
+    SNB.Native.Persons person1A,
+    GRAPH BIGraph19
+        (person1B:Person)-[k:KNOWS+]->(person2B:Person),
+    SNB.Native.Persons person2A
+WHERE
+    person1A.placeId = 185 AND
+    person1B.placeId = 111 AND
+    person1A.id = person1B.id AND
+    person2A.id = person2B.id
+GROUP BY
+    person1B.id AS id1,
+    person2B.id AS id2
+    GROUP AS g
+LET
+    cheapestPathWeight = (
+        FROM
+            g
+        LET
+            cost = ( FROM EDGES(g.k) e SELECT VALUE SUM(e.weight) )[0]
+        SELECT VALUE
+            cost
+        ORDER BY
+            ABS(cost) ASC
+        LIMIT
+            1
+    )[0]
+SELECT
+    id1                AS person1id,
+    id2                AS person2id,
+    cheapestPathWeight AS totalWeight
+ORDER BY
+    person1id ASC,
+    person2id ASC;

@@ -1,0 +1,82 @@
+/*
+ * Licensed to the Apache Software Foundation (ASF) under one
+ * or more contributor license agreements.  See the NOTICE file
+ * distributed with this work for additional information
+ * regarding copyright ownership.  The ASF licenses this file
+ * to you under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance
+ * with the License.  You may obtain a copy of the License at
+ *
+ *   http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing,
+ * software distributed under the License is distributed on an
+ * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ * KIND, either express or implied.  See the License for the
+ * specific language governing permissions and limitations
+ * under the License.
+ */
+SET `graphix.evaluation.prefer-indexnl` "false";
+
+-- param compile-only:string=true
+-- param optimized-logical-plan:string=true
+-- param plan-format:string=string
+
+EXPLAIN
+WITH
+    GRAPH Complex14Graph AS
+        VERTEX (:Person)
+            PRIMARY KEY (id)
+            AS SNB.Native.Persons,
+        EDGE (:Person)-[:KNOWS]->(:Person)
+            SOURCE KEY      (startId)
+            DESTINATION KEY (endId)
+            AS (
+                FROM
+                    SNB.Native.Messages m1,
+                    SNB.Native.Messages m2,
+                    SNB.Native.Knows k
+                WHERE
+                    k.startId = m1.creatorId AND
+                    k.endId = m2.creatorId AND
+                    ( m1.replyOfMessageId = m2.id OR
+                      m2.replyOfMessageId = m1.id )
+                GROUP BY
+                    m1.creatorId AS startId,
+                    m2.creatorId AS endId
+                    GROUP AS g
+                LET
+                    w1 = ( FROM g WHERE g.m1.isPost OR g.m2.isPost SELECT VALUE COUNT(*) )[0],
+                    w2 = ( FROM g WHERE NOT g.m1.isPost OR NOT g.m2.isPost SELECT VALUE COUNT(*) )[0] * 0.5
+                SELECT
+                    startId AS startId,
+                    endId   AS endId,
+                    w1 + w2 AS weight
+            )
+FROM
+    GRAPH Complex14Graph
+        (person1:Person)-[k:KNOWS+]->(person2:Person)
+WHERE
+    person1.id = 14 AND
+    person2.id = 6597069766702
+GROUP BY
+    person1.id,
+    person2.id
+    GROUP AS g
+LET
+    cheapestPath = (
+        FROM
+            g
+        SELECT
+            ( FROM VERTICES(g.k) kv SELECT VALUE kv.id )          AS ids,
+            ( FROM EDGES(g.k) ke SELECT VALUE SUM(ke.weight) )[0] AS cost
+        ORDER BY
+            ABS(cost) ASC
+        LIMIT
+            1
+    )[0]
+SELECT
+    cheapestPath.ids  AS personIdsInPath,
+    cheapestPath.cost AS pathWeight
+ORDER BY
+    pathWeight DESC;

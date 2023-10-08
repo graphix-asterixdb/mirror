@@ -1,0 +1,75 @@
+/*
+ * Licensed to the Apache Software Foundation (ASF) under one
+ * or more contributor license agreements.  See the NOTICE file
+ * distributed with this work for additional information
+ * regarding copyright ownership.  The ASF licenses this file
+ * to you under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance
+ * with the License.  You may obtain a copy of the License at
+ *
+ *   http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing,
+ * software distributed under the License is distributed on an
+ * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ * KIND, either express or implied.  See the License for the
+ * specific language governing permissions and limitations
+ * under the License.
+ */
+SET `graphix.compiler.permit.unbounded-all-paths` "true";
+SET `graphix.evaluation.prefer-indexnl` "false";
+
+-- param compile-only:string=true
+-- param optimized-logical-plan:string=true
+-- param plan-format:string=string
+
+EXPLAIN
+LET
+    topForums = (
+        FROM
+            (
+                FROM
+                    GRAPH SNB.Native.SNBGraph
+                        (country:Country)<-[:IS_PART_OF]-(:City)<-[:IS_LOCATED_IN]-(member:Person),
+                        (member)<-[:HAS_MEMBER]-(forum:Forum)
+                WHERE
+                    forum.creationDate > DATETIME("2010-12-02T00:00:00")
+                GROUP BY
+                    forum,
+                    country
+                SELECT
+                    forum         AS forum,
+                    country       AS country,
+                    COUNT(member) AS memberCount
+            ) AS t
+        GROUP BY
+            t.forum
+        SELECT VALUE
+            t.forum.id
+        ORDER BY
+            MAX(t.memberCount) DESC
+        LIMIT
+            100
+    )
+FROM
+    topForums tf,
+    GRAPH SNB.Native.SNBGraph
+        (person:Person)<-[:HAS_MEMBER]-(forum2:Forum)
+    LEFT MATCH
+        (person)<-[:HAS_CREATOR]-(message:Message),
+        (message)-[:REPLY_OF*]->(post:Message WHERE post.isPost)<-[:CONTAINER_OF]-(:Forum)
+WHERE
+    tf = forum2.id
+GROUP BY
+    person
+SELECT
+    person.id                                          AS personId,
+    person.firstName                                   AS personFirstName,
+    person.lastName                                    AS personLastName,
+    UNIX_TIME_FROM_DATETIME_IN_MS(person.creationDate) AS creationDate,
+    COUNT(DISTINCT message.id)                         AS messageCount
+ORDER BY
+    messageCount DESC,
+    personId ASC
+LIMIT
+    100;

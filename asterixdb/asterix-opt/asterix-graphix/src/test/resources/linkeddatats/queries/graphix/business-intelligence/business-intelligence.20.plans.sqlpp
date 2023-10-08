@@ -1,0 +1,81 @@
+/*
+ * Licensed to the Apache Software Foundation (ASF) under one
+ * or more contributor license agreements.  See the NOTICE file
+ * distributed with this work for additional information
+ * regarding copyright ownership.  The ASF licenses this file
+ * to you under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance
+ * with the License.  You may obtain a copy of the License at
+ *
+ *   http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing,
+ * software distributed under the License is distributed on an
+ * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ * KIND, either express or implied.  See the License for the
+ * specific language governing permissions and limitations
+ * under the License.
+ */
+
+-- param compile-only:string=true
+-- param optimized-logical-plan:string=true
+-- param plan-format:string=string
+
+EXPLAIN
+WITH
+    GRAPH BIGraph20 AS
+        VERTEX (:Person)
+            PRIMARY KEY (id)
+            AS SNB.Native.Persons,
+        EDGE (:Person)-[:KNOWS]->(:Person)
+            SOURCE KEY      (startId)
+            DESTINATION KEY (endId)
+            AS (
+                FROM
+                    GRAPH SNB.Native.SNBGraph
+                        (personA:Person)-[:KNOWS]->(personB:Person),
+                        (personA)-[saA:STUDY_AT]->(:University)<-[saB:STUDY_AT]-(personB)
+                GROUP BY
+                    personA.id AS aid,
+                    personB.id AS bid
+                    GROUP AS g
+                LET
+                    weight = ( FROM g SELECT VALUE MIN(ABS(g.saA.classYear - g.saB.classYear)) + 1 )[0]
+                SELECT
+                    aid    AS startId,
+                    bid    AS endId,
+                    weight AS weight
+            )
+FROM
+    GRAPH BIGraph20
+        (person2A:Person WHERE person2A.id = 14)<-[k:KNOWS+]-(person1A:Person),
+    GRAPH SNB.Native.SNBGraph
+        (person1B:Person)-[:WORK_AT]->(company:Company)
+WHERE
+    person1A.id /*+indexnl*/ = person1B.id AND
+    company.name = "Fars_Air_Qeshm"
+GROUP BY
+    person1A.id AS id1,
+    person2A.id AS id2
+    GROUP AS g
+LET
+    cheapestPath = (
+        FROM
+            g
+        LET
+            cost = ( FROM EDGES(g.k) ke SELECT VALUE SUM(ke.weight) )[0]
+        SELECT
+            cost
+        ORDER BY
+            ABS(cost) ASC
+        LIMIT
+            1
+    )[0]
+SELECT
+    id1               AS person1Id,
+    cheapestPath.cost AS totalWeight
+ORDER BY
+    totalWeight ASC,
+    person1Id ASC
+LIMIT
+    1;

@@ -1,0 +1,456 @@
+{
+  "workload": [
+    {
+      "queryFile": "complex-1-v1.sqlpp",
+      "parameterFiles": [
+        "interactive-1.parquet"
+      ],
+      "repeat": 2,
+      "timeout": 10800
+    },
+    {
+      "queryFile": "complex-1-v2.sqlpp",
+      "parameterFiles": [
+        "interactive-1.parquet"
+      ],
+      "repeat": 2,
+      "timeout": 10800
+    },
+    {
+      "queryFile": "complex-2-v1.sqlpp",
+      "parameterFiles": [
+        "interactive-2.parquet"
+      ],
+      "repeat": 2,
+      "timeout": 10800
+    },
+    {
+      "queryFile": "complex-3-v1.sqlpp",
+      "parameterFiles": [
+        "interactive-3a.parquet",
+        "interactive-3b.parquet"
+      ],
+      "repeat": 2,
+      "timeout": 10800
+    },
+    {
+      "queryFile": "complex-3-v2.sqlpp",
+      "parameterFiles": [
+        "interactive-3a.parquet",
+        "interactive-3b.parquet"
+      ],
+      "repeat": 2,
+      "timeout": 10800
+    },
+    {
+      "queryFile": "complex-4-v1.sqlpp",
+      "parameterFiles": [
+        "interactive-4.parquet"
+      ],
+      "repeat": 2,
+      "timeout": 10800
+    },
+    {
+      "queryFile": "complex-5-v1.sqlpp",
+      "parameterFiles": [
+        "interactive-5.parquet"
+      ],
+      "repeat": 2,
+      "timeout": 10800
+    },
+    {
+      "queryFile": "complex-6-v1.sqlpp",
+      "parameterFiles": [
+        "interactive-6.parquet"
+      ],
+      "repeat": 2,
+      "timeout": 10800
+    },
+    {
+      "queryFile": "complex-7-v1.sqlpp",
+      "parameterFiles": [
+        "interactive-7.parquet"
+      ],
+      "repeat": 2,
+      "timeout": 10800
+    },
+    {
+      "queryFile": "complex-7-v2.sqlpp",
+      "parameterFiles": [
+        "interactive-7.parquet"
+      ],
+      "repeat": 2,
+      "timeout": 10800
+    },
+    {
+      "queryFile": "complex-8-v1.sqlpp",
+      "parameterFiles": [
+        "interactive-8.parquet"
+      ],
+      "repeat": 2,
+      "timeout": 10800
+    },
+    {
+      "queryFile": "complex-9-v1.sqlpp",
+      "parameterFiles": [
+        "interactive-9.parquet"
+      ],
+      "repeat": 2,
+      "timeout": 10800
+    },
+    {
+      "queryFile": "complex-9-v2.sqlpp",
+      "parameterFiles": [
+        "interactive-9.parquet"
+      ],
+      "repeat": 2,
+      "timeout": 10800
+    },
+    {
+      "queryFile": "complex-10-v1.sqlpp",
+      "parameterFiles": [
+        "interactive-10.parquet"
+      ],
+      "repeat": 2,
+      "timeout": 10800
+    },
+    {
+      "queryFile": "complex-10-v2.sqlpp",
+      "parameterFiles": [
+        "interactive-10.parquet"
+      ],
+      "repeat": 2,
+      "timeout": 10800
+    },
+    {
+      "queryFile": "complex-11-v1.sqlpp",
+      "parameterFiles": [
+        "interactive-11.parquet"
+      ],
+      "repeat": 2,
+      "timeout": 10800
+    },
+    {
+      "queryFile": "complex-11-v2.sqlpp",
+      "parameterFiles": [
+        "interactive-11.parquet"
+      ],
+      "repeat": 2,
+      "timeout": 10800
+    },
+    {
+      "queryFile": "complex-12-v1.sqlpp",
+      "parameterFiles": [
+        "interactive-12.parquet"
+      ],
+      "repeat": 2,
+      "timeout": 10800
+    },
+    {
+      "queryFile": "complex-13-v1.sqlpp",
+      "parameterFiles": [
+        "interactive-13a.parquet"
+      ],
+      "repeat": 2,
+      "timeout": 10800
+    },
+    {
+      "queryFile": "complex-14-v1.sqlpp",
+      "parameterFiles": [
+        "interactive-14a.parquet"
+      ],
+      "repeat": 2,
+      "timeout": 10800
+    },
+    {
+      "queryFile": "complex-14-v2.sqlpp",
+      "parameterFiles": [
+        "interactive-14a.parquet"
+      ],
+      "repeat": 2,
+      "timeout": 10800
+    },
+    {
+      "queryFile": "complex-14-v3.sqlpp",
+      "parameterFiles": [
+        "interactive-14a.parquet"
+      ],
+      "repeat": 2,
+      "timeout": 10800
+    },
+    {
+      "queryFile": "short-1-v1.sqlpp",
+      "parameterFiles": [
+        "interactive-personId.parquet"
+      ],
+      "repeat": 2,
+      "timeout": 180
+    },
+    {
+      "queryFile": "short-2-v1.sqlpp",
+      "parameterFiles": [
+        "interactive-personId.parquet"
+      ],
+      "repeat": 2,
+      "timeout": 180
+    },
+    {
+      "queryFile": "short-3-v1.sqlpp",
+      "parameterFiles": [
+        "interactive-personId.parquet"
+      ],
+      "repeat": 2,
+      "timeout": 180
+    },
+    {
+      "queryFile": "short-4-v1.sqlpp",
+      "parameterFiles": [
+        "interactive-messageId.parquet"
+      ],
+      "repeat": 2,
+      "timeout": 180
+    },
+    {
+      "queryFile": "short-5-v1.sqlpp",
+      "parameterFiles": [
+        "interactive-messageId.parquet"
+      ],
+      "repeat": 2,
+      "timeout": 180
+    },
+    {
+      "queryFile": "short-6-v1.sqlpp",
+      "parameterFiles": [
+        "interactive-messageId.parquet"
+      ],
+      "repeat": 2,
+      "timeout": 180
+    },
+    {
+      "queryFile": "short-7-v1.sqlpp",
+      "parameterFiles": [
+        "interactive-messageId.parquet"
+      ],
+      "repeat": 2,
+      "timeout": 180
+    },
+    {
+      "queryFile": "bi-1-v1.sqlpp",
+      "parameterFiles": [
+        "bi-1.csv"
+      ],
+      "repeat": 2,
+      "timeout": 10800
+    },
+    {
+      "queryFile": "bi-2-v1.sqlpp",
+      "parameterFiles": [
+        "bi-2a.csv",
+        "bi-2b.csv"
+      ],
+      "repeat": 2,
+      "timeout": 10800
+    },
+    {
+      "queryFile": "bi-3-v1.sqlpp",
+      "parameterFiles": [
+        "bi-3.csv"
+      ],
+      "repeat": 2,
+      "timeout": 10800
+    },
+    {
+      "queryFile": "bi-4-v1.sqlpp",
+      "parameterFiles": [
+        "bi-4.csv"
+      ],
+      "repeat": 2,
+      "timeout": 10800
+    },
+    {
+      "queryFile": "bi-5-v1.sqlpp",
+      "parameterFiles": [
+        "bi-5.csv"
+      ],
+      "repeat": 2,
+      "timeout": 10800
+    },
+    {
+      "queryFile": "bi-5-v2.sqlpp",
+      "parameterFiles": [
+        "bi-5.csv"
+      ],
+      "repeat": 2,
+      "timeout": 10800
+    },
+    {
+      "queryFile": "bi-6-v1.sqlpp",
+      "parameterFiles": [
+        "bi-6.csv"
+      ],
+      "repeat": 2,
+      "timeout": 10800
+    },
+    {
+      "queryFile": "bi-7-v1.sqlpp",
+      "parameterFiles": [
+        "bi-7.csv"
+      ],
+      "repeat": 2,
+      "timeout": 10800
+    },
+    {
+      "queryFile": "bi-8-v1.sqlpp",
+      "parameterFiles": [
+        "bi-8a.csv",
+        "bi-8b.csv"
+      ],
+      "repeat": 2,
+      "timeout": 10800
+    },
+    {
+      "queryFile": "bi-9-v1.sqlpp",
+      "parameterFiles": [
+        "bi-9.csv"
+      ],
+      "repeat": 2,
+      "timeout": 10800
+    },
+    {
+      "queryFile": "bi-10-v1.sqlpp",
+      "parameterFiles": [
+        "bi-10a.csv",
+        "bi-10b.csv"
+      ],
+      "repeat": 2,
+      "timeout": 10800
+    },
+    {
+      "queryFile": "bi-11-v1.sqlpp",
+      "parameterFiles": [
+        "bi-11.csv"
+      ],
+      "repeat": 2,
+      "timeout": 10800
+    },
+    {
+      "queryFile": "bi-11-v2.sqlpp",
+      "parameterFiles": [
+        "bi-11.csv"
+      ],
+      "repeat": 2,
+      "timeout": 10800
+    },
+    {
+      "queryFile": "bi-12-v1.sqlpp",
+      "parameterFiles": [
+        "bi-12.csv"
+      ],
+      "repeat": 2,
+      "timeout": 10800
+    },
+    {
+      "queryFile": "bi-13-v1.sqlpp",
+      "parameterFiles": [
+        "bi-13.csv"
+      ],
+      "repeat": 2,
+      "timeout": 10800
+    },
+    {
+      "queryFile": "bi-13-v2.sqlpp",
+      "parameterFiles": [
+        "bi-13.csv"
+      ],
+      "repeat": 2,
+      "timeout": 10800
+    },
+    {
+      "queryFile": "bi-14-v1.sqlpp",
+      "parameterFiles": [
+        "bi-14a.csv",
+        "bi-14b.csv"
+      ],
+      "repeat": 2,
+      "timeout": 10800
+    },
+    {
+      "queryFile": "bi-14-v2.sqlpp",
+      "parameterFiles": [
+        "bi-14a.csv",
+        "bi-14b.csv"
+      ],
+      "repeat": 2,
+      "timeout": 10800
+    },
+    {
+      "queryFile": "bi-15-v1.sqlpp",
+      "parameterFiles": [
+        "bi-15a.csv",
+        "bi-15b.csv"
+      ],
+      "repeat": 2,
+      "timeout": 10800
+    },
+    {
+      "queryFile": "bi-16-v1.sqlpp",
+      "parameterFiles": [
+        "bi-16a.csv",
+        "bi-16b.csv"
+      ],
+      "repeat": 2,
+      "timeout": 10800
+    },
+    {
+      "queryFile": "bi-17-v1.sqlpp",
+      "parameterFiles": [
+        "bi-17.csv"
+      ],
+      "repeat": 2,
+      "timeout": 10800
+    },
+    {
+      "queryFile": "bi-18-v1.sqlpp",
+      "parameterFiles": [
+        "bi-18.csv"
+      ],
+      "repeat": 2,
+      "timeout": 10800
+    },
+    {
+      "queryFile": "bi-18-v2.sqlpp",
+      "parameterFiles": [
+        "bi-18.csv"
+      ],
+      "repeat": 2,
+      "timeout": 10800
+    },
+    {
+      "queryFile": "bi-19-v1.sqlpp",
+      "parameterFiles": [
+        "bi-19a.csv",
+        "bi-19b.csv"
+      ],
+      "repeat": 2,
+      "timeout": 10800
+    },
+    {
+      "queryFile": "bi-19-v2.sqlpp",
+      "parameterFiles": [
+        "bi-19a.csv",
+        "bi-19b.csv"
+      ],
+      "repeat": 2,
+      "timeout": 10800
+    },
+    {
+      "queryFile": "bi-20-v1.sqlpp",
+      "parameterFiles": [
+        "bi-20a.csv",
+        "bi-20b.csv"
+      ],
+      "repeat": 2,
+      "timeout": 10800
+    }
+  ]
+}

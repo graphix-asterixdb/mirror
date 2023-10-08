@@ -4,7 +4,6 @@ target
 .classpath
 .settings
 .project
-asterixdb/asterix-opt
 asterixdb/asterix-app/library
 *.pyc
 *.iml

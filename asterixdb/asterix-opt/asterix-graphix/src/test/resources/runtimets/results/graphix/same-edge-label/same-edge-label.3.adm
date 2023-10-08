@@ -1,0 +1,4 @@
+{ "u_user_id": 1, "edge_type": "USER_RELATED_TO_USER", "v_label": "User" }
+{ "u_user_id": 1, "edge_type": "USER_RELATED_TO_USER", "v_label": "User" }
+{ "u_user_id": 2, "edge_type": "USER_RELATED_TO_USER", "v_label": "User" }
+{ "u_user_id": 3, "edge_type": "USER_RELATED_TO_USER", "v_label": "User" }
