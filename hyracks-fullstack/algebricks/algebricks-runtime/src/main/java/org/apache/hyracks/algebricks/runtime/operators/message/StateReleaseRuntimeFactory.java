@@ -101,16 +101,16 @@ public class StateReleaseRuntimeFactory extends AbstractPushRuntimeFactory {
                     }
 
                     // We will flush using our delegate runtime.
-                    LOGGER.trace("Flushing our delegate {}.", delegateClassName);
                     frameTupleListener.startListening();
+                    LOGGER.trace("Flushing our delegate {}.", delegateClassName);
                     delegateRuntime.flush();
                     if (frameTupleListener.hasTuples()) {
                         LOGGER.trace("Our delegate {} has {} tuples. Marker flag has been raised.", delegateClassName,
                                 frameTupleListener.getNumberOfTuples());
                         MarkerMessageConsumer.raiseLiveFlag(buffer);
                     }
-                    frameTupleListener.stopListening();
                     originalOutputWriter.nextFrame(buffer);
+                    frameTupleListener.stopListening();
 
                 } else {
                     delegateRuntime.nextFrame(buffer);

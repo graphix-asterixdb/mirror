@@ -20,7 +20,6 @@ package org.apache.hyracks.dataflow.std.iteration;
 
 import java.nio.ByteBuffer;
 import java.util.concurrent.locks.Lock;
-import java.util.concurrent.locks.ReentrantLock;
 
 import org.apache.hyracks.api.comm.IFrameWriter;
 import org.apache.hyracks.api.comm.IPartitionWriterFactory;
@@ -31,6 +30,7 @@ import org.apache.hyracks.api.job.IConnectorDescriptorRegistry;
 import org.apache.hyracks.data.std.primitive.IntegerPointable;
 import org.apache.hyracks.dataflow.std.base.AbstractMToNConnectorDescriptor;
 import org.apache.hyracks.dataflow.std.iteration.common.Message;
+import org.apache.hyracks.dataflow.std.iteration.common.TracerLock;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
@@ -56,7 +56,7 @@ public class FixedPointConnectorDescriptor extends AbstractMToNConnectorDescript
         final boolean[] isOpen = new boolean[nConsumerPartitions];
         for (int i = 0; i < nConsumerPartitions; ++i) {
             epWriters[i] = edwFactory.createFrameWriter(i);
-            epWriterLocks[i] = new ReentrantLock();
+            epWriterLocks[i] = TracerLock.get(FixedPointOperatorDescriptor.class.getName() + "_" + i);
         }
         return new IFrameWriter() {
             @Override

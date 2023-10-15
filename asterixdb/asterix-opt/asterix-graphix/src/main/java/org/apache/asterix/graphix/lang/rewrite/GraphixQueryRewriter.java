@@ -47,6 +47,7 @@ import org.apache.asterix.graphix.lang.rewrite.visitor.LiveVertexMarkingVisitor;
 import org.apache.asterix.graphix.lang.rewrite.visitor.PlaceEvaluationHintsVisitor;
 import org.apache.asterix.graphix.lang.rewrite.visitor.PostRewriteCheckVisitor;
 import org.apache.asterix.graphix.lang.rewrite.visitor.PreRewriteCheckVisitor;
+import org.apache.asterix.graphix.lang.rewrite.visitor.ResponseFieldPrinterVisitor;
 import org.apache.asterix.graphix.lang.rewrite.visitor.SchemaTableCreationVisitor;
 import org.apache.asterix.graphix.lang.statement.GraphElementDeclaration;
 import org.apache.asterix.lang.common.base.Expression;
@@ -81,6 +82,7 @@ import org.apache.logging.log4j.Logger;
  *  <li>Populate the GROUP-BY unknowns (i.e. GROUP-BY fields) in our AST.</li>
  *  <li>Perform a "dead vertex" identifying pass, to mark which vertices do not need their full vertex body.</li>
  *  <li>Perform a variable-scoping pass to identify illegal variables (either duplicate or out-of-scope).</li>
+ *  <li>Add Graphix-specific context about our query to our result when our query is done executing.</li>
  *  <li>Perform a lowering pass to transform Graphix AST nodes to SQL++ AST nodes.</li>
  *  <li>Hand our AST downstream and perform all SQL++ rewrites on our newly lowered AST.</li>
  * </ol>
@@ -180,7 +182,7 @@ public class GraphixQueryRewriter extends SqlppQueryRewriter {
         }
     }
 
-    public void rewriteGraphixASTNodes(GraphixRewritingContext graphixRewritingContext,
+    private void rewriteGraphixASTNodes(GraphixRewritingContext graphixRewritingContext,
             IReturningStatement topStatement, boolean allowNonStoredUDFCalls) throws CompilationException {
         // Generate names for unnamed graph elements, projections in our SELECT CLAUSE.
         LOGGER.trace("Populating unknowns (both graph and non-graph) in our AST.");
@@ -225,8 +227,38 @@ public class GraphixQueryRewriter extends SqlppQueryRewriter {
         LOGGER.trace("Verifying that variables are unique and are properly scoped.");
         rewriteExpr(topStatement, new ExpressionScopingVisitor(graphixRewritingContext));
 
+        // For any tools that need additional context on how the query was interpreted, add this information here.
+        LOGGER.trace("Attaching additional Graphix-specific context to our result.");
+        ResponseFieldPrinterVisitor responseFieldPrinterVisitor =
+                new ResponseFieldPrinterVisitor(graphixRewritingContext);
+        rewriteExpr(topStatement, responseFieldPrinterVisitor);
+
         // Transform all graph AST nodes (i.e. perform the representation lowering).
         LOGGER.trace("Lowering the Graphix AST-specific nodes representation to a SQL++ representation.");
+        rewriteExpr(topStatement, new ExpressionLoweringVisitor(graphixRewritingContext));
+    }
+
+    private void rewriteGraphixASTNodesInBody(GraphixRewritingContext graphixRewritingContext,
+            IReturningStatement topStatement, boolean allowNonStoredUDFCalls) throws CompilationException {
+        LOGGER.trace("Lowering the Graphix AST-specific nodes in a **body** representation to a SQL++ representation.");
+        rewriteExpr(topStatement, new FillStartingUnknownsVisitor(graphixRewritingContext));
+        rewriteExpr(topStatement, new FunctionResolutionVisitor(graphixRewritingContext, allowNonStoredUDFCalls));
+        rewriteExpr(topStatement, new CorrelatedVertexJoinVisitor(graphixRewritingContext));
+
+        // Resolve our vertex labels, edge labels, and edge directions, and paths.
+        SchemaTableCreationVisitor creationVisitor = new SchemaTableCreationVisitor(graphixRewritingContext);
+        topStatement.accept(creationVisitor, null);
+        for (Pair<GraphIdentifier, SuperPattern> mapEntry : creationVisitor) {
+            SchemaTable schemaTable = creationVisitor.getSchemaTableMap().get(mapEntry.getFirst());
+            new ExhaustiveSearchResolver(schemaTable, graphixRewritingContext).resolve(mapEntry.getSecond());
+        }
+
+        rewriteExpr(topStatement, new ElementDeclarationVisitor(graphixRewritingContext, parserFactory));
+        rewriteExpr(topStatement, new DeclarationNormalizeVisitor(graphixRewritingContext, this));
+        rewriteExpr(topStatement, new FillGroupByUnknownsVisitor());
+        rewriteExpr(topStatement, new SubstituteGroupbyExpressionWithVariableVisitor(graphixRewritingContext));
+        rewriteExpr(topStatement, new LiveVertexMarkingVisitor(graphixRewritingContext));
+        rewriteExpr(topStatement, new ExpressionScopingVisitor(graphixRewritingContext));
         rewriteExpr(topStatement, new ExpressionLoweringVisitor(graphixRewritingContext));
     }
 
@@ -238,7 +270,7 @@ public class GraphixQueryRewriter extends SqlppQueryRewriter {
      *  <li>SQL-compat rewrites (not supported).</li>
      * </ul>
      */
-    public void rewriteSQLPPASTNodes(LangRewritingContext langRewritingContext, IReturningStatement topStatement,
+    private void rewriteSQLPPASTNodes(LangRewritingContext langRewritingContext, IReturningStatement topStatement,
             boolean allowNonStoredUDFCalls, boolean inlineUdfsAndViews, Collection<VarIdentifier> externalVars)
             throws CompilationException {
         super.setup(langRewritingContext, topStatement, externalVars, allowNonStoredUDFCalls, inlineUdfsAndViews);
@@ -272,7 +304,7 @@ public class GraphixQueryRewriter extends SqlppQueryRewriter {
                 topStatement.accept(new PreRewriteCheckVisitor(graphixRewritingContext), null);
 
                 // Perform the Graphix rewrites.
-                rewriteGraphixASTNodes(graphixRewritingContext, topStatement, allowNonStoredUDFCalls);
+                rewriteGraphixASTNodesInBody(graphixRewritingContext, topStatement, allowNonStoredUDFCalls);
 
                 // Sanity check: ensure that no graph AST nodes exist after this point.
                 Map<String, Object> queryConfig = graphixRewritingContext.getMetadataProvider().getConfig();

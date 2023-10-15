@@ -24,11 +24,13 @@ import org.apache.hyracks.algebricks.common.exceptions.AlgebricksException;
 import org.apache.hyracks.algebricks.core.algebra.base.ILogicalOperator;
 import org.apache.hyracks.algebricks.core.algebra.base.IOptimizationContext;
 import org.apache.hyracks.algebricks.core.algebra.base.LogicalOperatorTag;
+import org.apache.hyracks.algebricks.core.algebra.base.PhysicalOperatorTag;
 import org.apache.hyracks.algebricks.core.algebra.operators.logical.AbstractLogicalOperator;
 import org.apache.hyracks.algebricks.core.algebra.operators.logical.AssignOperator;
 import org.apache.hyracks.algebricks.core.algebra.operators.logical.DelegateOperator;
 import org.apache.hyracks.algebricks.core.algebra.operators.logical.ProjectOperator;
 import org.apache.hyracks.algebricks.core.algebra.operators.physical.AssignPOperator;
+import org.apache.hyracks.algebricks.core.algebra.operators.physical.StateReleasePOperator;
 import org.apache.hyracks.algebricks.core.algebra.operators.physical.StreamProjectPOperator;
 import org.apache.hyracks.algebricks.core.rewriter.base.IAlgebraicRewriteRule;
 
@@ -79,7 +81,14 @@ public class IntroduceRapidFrameFlushProjectAssignRule implements IAlgebraicRewr
 
             if (descendantOp.getOperatorTag() == LogicalOperatorTag.PROJECT) {
                 ProjectOperator projectOp = (ProjectOperator) descendantOp;
-                StreamProjectPOperator physicalOp = (StreamProjectPOperator) projectOp.getPhysicalOperator();
+                StreamProjectPOperator physicalOp;
+                if (projectOp.getPhysicalOperator().getOperatorTag() == PhysicalOperatorTag.STATE_RELEASE) {
+                    StateReleasePOperator srPhysicalOp = (StateReleasePOperator) projectOp.getPhysicalOperator();
+                    physicalOp = (StreamProjectPOperator) srPhysicalOp.getPhysicalDelegateOp();
+
+                } else {
+                    physicalOp = (StreamProjectPOperator) projectOp.getPhysicalOperator();
+                }
                 physicalOp.setRapidFrameFlush(true);
                 planModified = true;
             } else if (descendantOp.getOperatorTag() == LogicalOperatorTag.ASSIGN) {

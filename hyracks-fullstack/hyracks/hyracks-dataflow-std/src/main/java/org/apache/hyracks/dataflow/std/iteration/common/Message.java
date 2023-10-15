@@ -36,6 +36,11 @@ public class Message implements Serializable {
      */
     public static final int BROADCAST = -1;
 
+    /**
+     * When inserted into a queue, all consumers will subsequently shut down.
+     */
+    public static final Message POISON_PILL = new Message(-1, -1, Event.POISON, -1, false);
+
     public static final int SOURCE_BYTES_START = Integer.BYTES;
     public static final int DESTINATION_BYTES_START = SOURCE_BYTES_START + Integer.BYTES;
     public static final int EVENT_BYTES_START = DESTINATION_BYTES_START + Integer.BYTES;
@@ -99,7 +104,7 @@ public class Message implements Serializable {
 
     @Override
     public String toString() {
-        String liveFlagString = Boolean.toString(liveFlag).toUpperCase();
+        String liveFlagString = liveFlag ? "LIVE" : "DEAD";
         String eventString = (event == Event.MARKER) ? String.format("%s-%s", event, liveFlagString) : event.toString();
         return String.format("[%s][t = %d] (%s)-->(%s)", eventString, timestamp, sourceId,
                 ((destId == BROADCAST) ? "EVERYONE" : destId));

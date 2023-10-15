@@ -143,9 +143,13 @@ class GraphixBenchmarkClient(AbstractBenchmarkClient):
             response = requests.post(self.config['endpoint'], api_parameters).json()
             if response['status'] != 'success':
                 LOGGER.error(f'Error (non-success) returned from AsterixDB:\n{str(response)}')
-                if 'errors' in response and any('No space left on device' in e['msg'] for e in response['errors']):
-                    LOGGER.warning('Marking this out-of-space error as transient.')
-                    response['status'] = 'transient'
+                if 'errors' in response:
+                    if any('No space left on device' in e['msg'] for e in response['errors']):
+                        LOGGER.warning('Marking this out-of-space error as transient.')
+                        response['status'] = 'transient'
+                    elif any('has been cancelled' in e['msg'] for e in response['errors']):
+                        LOGGER.warning('Marking this cancelled request error as transient.')
+                        response['status'] = 'transient'
             elif 'results' in response and len(response['results']) == 0:
                 LOGGER.warning(f"Zero results returned for query:\n{query}")
             return response

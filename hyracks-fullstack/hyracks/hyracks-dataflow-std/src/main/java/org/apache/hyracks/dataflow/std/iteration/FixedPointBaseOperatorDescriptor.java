@@ -179,12 +179,4 @@ public abstract class FixedPointBaseOperatorDescriptor extends AbstractOperatorD
             }
         }
     }
-
-    // Note: we use this error to help development: if we encounter deadlocks, errors do not bubble back up.
-    protected static class FixedPointException extends HyracksDataException {
-        public FixedPointException(String errorMessage) {
-            super(ErrorCode.ILLEGAL_STATE, errorMessage);
-            LOGGER.fatal(errorMessage);
-        }
-    }
 }

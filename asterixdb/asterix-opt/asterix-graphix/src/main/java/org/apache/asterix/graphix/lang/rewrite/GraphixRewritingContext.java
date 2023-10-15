@@ -20,12 +20,15 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.Objects;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Stream;
 
+import org.apache.asterix.common.api.IResponsePrinter;
 import org.apache.asterix.common.exceptions.CompilationException;
 import org.apache.asterix.common.exceptions.ErrorCode;
+import org.apache.asterix.graphix.algebra.compiler.option.CompilationAddContextOption;
 import org.apache.asterix.graphix.algebra.compiler.option.EvaluationMinimizeJoinsOption;
 import org.apache.asterix.graphix.algebra.compiler.option.EvaluationPreferIndexNLOption;
 import org.apache.asterix.graphix.algebra.compiler.option.IGraphixCompilerOption;
@@ -47,9 +50,18 @@ import org.apache.hyracks.api.exceptions.IWarningCollector;
 public class GraphixRewritingContext extends LangRewritingContext {
     private final Map<String, Pair<VariableExpr, Integer>> copyLineage = new HashMap<>();
 
+    // For applications that need additional context about our query patterns in the response.
+    private final IResponsePrinter responsePrinter;
+
     public GraphixRewritingContext(MetadataProvider metadataProvider, List<FunctionDecl> declaredFunctions,
-            List<ViewDecl> declaredViews, IWarningCollector warningCollector, int varCounter) {
+            List<ViewDecl> declaredViews, IWarningCollector warningCollector, int varCounter,
+            IResponsePrinter responsePrinter) {
         super(metadataProvider, declaredFunctions, declaredViews, warningCollector, varCounter);
+        this.responsePrinter = Objects.requireNonNull(responsePrinter);
+    }
+
+    public IResponsePrinter getResponsePrinter() {
+        return responsePrinter;
     }
 
     public VariableExpr getGraphixVariableCopy(VariableExpr existingVariable) {
@@ -101,6 +113,10 @@ public class GraphixRewritingContext extends LangRewritingContext {
             case EvaluationPreferIndexNLOption.OPTION_KEY_NAME:
                 enumValues = EvaluationPreferIndexNLOption.values();
                 return parseSetting(settingName, enumValues, EvaluationPreferIndexNLOption.OPTION_DEFAULT);
+
+            case CompilationAddContextOption.OPTION_KEY_NAME:
+                enumValues = CompilationAddContextOption.values();
+                return parseSetting(settingName, enumValues, CompilationAddContextOption.OPTION_DEFAULT);
 
             default:
                 throw new CompilationException(ErrorCode.COMPILATION_ILLEGAL_STATE, "Illegal setting requested!");

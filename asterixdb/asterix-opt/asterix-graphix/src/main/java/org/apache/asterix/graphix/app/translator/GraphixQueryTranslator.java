@@ -114,7 +114,7 @@ public class GraphixQueryTranslator extends QueryTranslator {
             List<FunctionDecl> declaredFunctions, List<ViewDecl> declaredViews, IWarningCollector warningCollector,
             int varCounter) {
         return new GraphixRewritingContext(metadataProvider, declaredFunctions, declaredViews, warningCollector,
-                varCounter);
+                varCounter, responsePrinter);
     }
 
     /**

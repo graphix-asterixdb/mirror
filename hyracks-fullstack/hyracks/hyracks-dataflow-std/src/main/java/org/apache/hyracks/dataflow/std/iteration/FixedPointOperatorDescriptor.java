@@ -19,14 +19,11 @@
 package org.apache.hyracks.dataflow.std.iteration;
 
 import java.nio.ByteBuffer;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.stream.Collectors;
+import java.util.concurrent.locks.ReentrantLock;
 
 import org.apache.hyracks.api.comm.FrameHelper;
 import org.apache.hyracks.api.comm.IFrame;
@@ -52,8 +49,8 @@ import org.apache.hyracks.dataflow.std.base.AbstractUnaryInputSinkOperatorNodePu
 import org.apache.hyracks.dataflow.std.iteration.common.Event;
 import org.apache.hyracks.dataflow.std.iteration.common.Message;
 import org.apache.hyracks.dataflow.std.iteration.common.State;
-import org.apache.hyracks.dataflow.std.iteration.election.ElectionManager;
-import org.apache.hyracks.dataflow.std.iteration.election.VotingBlock;
+import org.apache.hyracks.dataflow.std.iteration.common.TracerLock;
+import org.apache.hyracks.dataflow.std.iteration.election.ResponseManager;
 import org.apache.hyracks.dataflow.std.message.consumer.MarkerMessageConsumer;
 import org.apache.hyracks.dataflow.std.message.producer.MarkerMessageProducer;
 import org.apache.logging.log4j.LogManager;
@@ -231,11 +228,8 @@ public class FixedPointOperatorDescriptor extends FixedPointBaseOperatorDescript
             protected AnchorInputPushRuntime getAnchorInputRuntime() {
                 return new AnchorInputPushRuntime() {
                     private final MarkerMessageProducer markerProducer = new MarkerMessageProducer(consumerDesignation);
-
-                    // The following are used to manage our election (for our coordinator only).
-                    private final ElectionManager electionManager = new ElectionManager(nPartitions);
-                    private final List<Integer> bBlockVotingOrder = new ArrayList<>(nPartitions);
-                    private int bBlockVotingIndex = 0;
+                    private final ResponseManager responseManager = (partition == COORDINATOR_PARTITION_INDEX)
+                            ? new ResponseManager(nPartitions, this::sendMessage) : null;
 
                     // The following is used locally by each participant.
                     private long electionTimestamp;
@@ -246,11 +240,6 @@ public class FixedPointOperatorDescriptor extends FixedPointBaseOperatorDescript
                         messageWriter.open();
                         isClosed.set(false);
 
-                        // We will shuffle the array below each time we begin BLOCK_B.
-                        for (int i = 0; i < nPartitions; i++) {
-                            bBlockVotingOrder.add(i);
-                        }
-
                         // We spin-lock until our event-queue is made.
                         ActivityId eventQueueActivityId = new ActivityId(getOperatorId(), EVENT_QUEUE_ACTIVITY_ID);
                         Object stateId = new TaskId(eventQueueActivityId, partition);
@@ -260,6 +249,19 @@ public class FixedPointOperatorDescriptor extends FixedPointBaseOperatorDescript
                         } while (eventState == null);
                         messageQueue = ((EventQueueStateObject) eventState).messageQueue;
                         LOGGER.debug("Event-queue found on partition {}: {}", partition, stateId);
+                    }
+
+                    @Override
+                    public void fail() throws HyracksDataException {
+                        if (responseManager != null) {
+                            try {
+                                responseManager.close();
+
+                            } catch (InterruptedException e) {
+                                throw HyracksDataException.create(e);
+                            }
+                        }
+                        super.fail();
                     }
 
                     /**
@@ -310,6 +312,9 @@ public class FixedPointOperatorDescriptor extends FixedPointBaseOperatorDescript
                                     case MARKER:
                                         handleMarker();
                                         break;
+
+                                    default:
+                                        throw new FixedPointException("Illegal event on partition " + partition + "!");
                                 }
                             } catch (InterruptedException e) {
                                 throw HyracksDataException.create(e);
@@ -321,47 +326,16 @@ public class FixedPointOperatorDescriptor extends FixedPointBaseOperatorDescript
                         LOGGER.trace("Pushing marker frame on partition {}.", partition);
                         ByteBuffer markerBuffer = downstreamBufferFrame.getBuffer();
                         markerProducer.apply(markerBuffer, (short) partition, (short) partition, downstreamWriter);
+                        LOGGER.trace("Marker frame has been pushed on partition {}.", partition);
                     }
 
-                    private void handleCoordinator() throws HyracksDataException {
+                    private void handleCoordinator() throws HyracksDataException, InterruptedException {
+                        LOGGER.trace("Message to coordinator received: {}", message);
                         if (message.getDestId() != COORDINATOR_PARTITION_INDEX) {
                             // Sanity check: only our coordinator should handle status updates.
                             throw new FixedPointException("Illegal message sent to a participant!");
                         }
-                        switch (message.getEvent()) {
-                            case REQ:
-                                handleReq();
-                                break;
-
-                            case ACK_A:
-                            case NACK_A:
-                            case ACK_B:
-                            case NACK_B:
-                                handleVote();
-                                break;
-                        }
-                    }
-
-                    private void handleReq() throws HyracksDataException {
-                        electionManager.acceptEvent(message.getSourceId(), message.getEvent(), message.getTimestamp());
-                        VotingBlock votingBlock = electionManager.getVotingBlock(message.getTimestamp());
-
-                        // If all participants are WAITING, begin an election for BLOCK_A.
-                        switch (votingBlock) {
-                            case WAITING:
-                                LOGGER.trace("Initiating election with timestamp {}.", message.getTimestamp());
-                                sendMessage(Message.BROADCAST, Event.VOTE_ON_A, message.getTimestamp());
-                                break;
-
-                            case WORKING:
-                            case PERIOD_A:
-                                LOGGER.trace("Not all participants are WAITING:\n{}", electionManager::toString);
-                                break;
-
-                            default:
-                                throw new FixedPointException("WAITING event received, but we are not in an expected "
-                                        + "voting block! We are in " + votingBlock + "!");
-                        }
+                        responseManager.accept(message);
                     }
 
                     private void handleElectionA() throws HyracksDataException {
@@ -385,65 +359,11 @@ public class FixedPointOperatorDescriptor extends FixedPointBaseOperatorDescript
                                 transitionTo(State.VOTING_B);
                                 pushMarkerFrame();
                                 break;
+
                             default:
                                 throw new FixedPointException("VOTE_ON_B event received, but we are not in an "
                                         + "expected state! We are in " + getCurrentState() + "!");
                         }
-                    }
-
-                    private void handleVote() throws HyracksDataException {
-                        electionManager.acceptEvent(message.getSourceId(), message.getEvent(), message.getTimestamp());
-                        VotingBlock votingBlock = electionManager.getVotingBlock(message.getTimestamp());
-                        LOGGER.debug("Vote received for voting BLOCK {}.", votingBlock);
-
-                        // Determine if we should respond back to all participants.
-                        switch (votingBlock) {
-                            case PERIOD_A:
-                                switch (electionManager.getElectionResult(message.getTimestamp(), votingBlock)) {
-                                    case UNANIMOUS:
-                                        LOGGER.debug("All participants have voted yes on block A.");
-                                        Collections.shuffle(bBlockVotingOrder);
-                                        bBlockVotingIndex = 0;
-                                        if (LOGGER.isDebugEnabled()) {
-                                            LOGGER.debug("Sending VOTE_ON_B to participants in random order: [{}]",
-                                                    bBlockVotingOrder.stream().map(Object::toString)
-                                                            .collect(Collectors.joining(",")));
-                                        }
-                                        sendVoteOnB(message.getTimestamp());
-                                        return;
-
-                                    case BLOCKED:
-                                        LOGGER.debug("Not all participants have voted yes on block A.");
-                                        sendMessage(Message.BROADCAST, Event.CONTINUE, message.getTimestamp());
-                                        return;
-
-                                    case VOTING:
-                                        LOGGER.trace("Not all participants have voted about block A.\n{}",
-                                                electionManager::toString);
-                                        return;
-                                }
-
-                            case PERIOD_B:
-                                switch (electionManager.getElectionResult(message.getTimestamp(), votingBlock)) {
-                                    case UNANIMOUS:
-                                        LOGGER.debug("All participants have agreed to terminate (yes on B).");
-                                        sendMessage(Message.BROADCAST, Event.TERMINATE, message.getTimestamp());
-                                        return;
-
-                                    case BLOCKED:
-                                        LOGGER.debug("Participant {} has not agreed to terminate (no on B).",
-                                                message.getSourceId());
-                                        sendMessage(Message.BROADCAST, Event.CONTINUE, message.getTimestamp());
-                                        return;
-
-                                    case VOTING:
-                                        LOGGER.trace("Not all participants have voted about block B.\n{}",
-                                                electionManager::toString);
-                                        sendVoteOnB(message.getTimestamp());
-                                        return;
-                                }
-                        }
-                        throw new FixedPointException("ACK/NACK event received, but we are not voting!");
                     }
 
                     private void handleContinue() throws HyracksDataException {
@@ -466,12 +386,16 @@ public class FixedPointOperatorDescriptor extends FixedPointBaseOperatorDescript
                         }
                     }
 
-                    private void handleTerminate() throws HyracksDataException {
+                    private void handleTerminate() throws HyracksDataException, InterruptedException {
                         if (getCurrentState() == State.VOTING_B) {
                             transitionTo(State.TERMINATING);
                             isClosed.set(true);
                             downstreamWriter.close();
                             messageWriter.close();
+                            if (responseManager != null) {
+                                responseManager.close();
+                            }
+                            LOGGER.trace("close() finished on partition {}!", partition);
 
                         } else {
                             throw new FixedPointException("TERMINATE event received, but we are not in an expected "
@@ -531,12 +455,6 @@ public class FixedPointOperatorDescriptor extends FixedPointBaseOperatorDescript
                         Message.setDirectBytes(messageBytes, partition, destId, event, timestamp, false);
                         messageWriter.nextFrame(messageBytes);
                     }
-
-                    private void sendVoteOnB(long timestamp) throws HyracksDataException {
-                        int nextPartitionToVote = bBlockVotingOrder.get(bBlockVotingIndex++);
-                        LOGGER.trace("Sending BLOCK_B vote request to partition {}.", nextPartitionToVote);
-                        sendMessage(nextPartitionToVote, Event.VOTE_ON_B, timestamp);
-                    }
                 };
             }
 
@@ -595,12 +513,84 @@ public class FixedPointOperatorDescriptor extends FixedPointBaseOperatorDescript
             public void setOutputFrameWriter(int index, IFrameWriter writer, RecordDescriptor recordDesc) {
                 switch (index) {
                     case FIXED_POINT_OUTPUT_INDEX:
-                        this.downstreamWriter = writer;
+                        this.downstreamWriter = new IFrameWriter() {
+                            private final ReentrantLock writerLock = TracerLock.get("DownstreamWriter_" + partition);
+
+                            @Override
+                            public void open() throws HyracksDataException {
+                                // We do not expect contention here.
+                                writer.open();
+                            }
+
+                            @Override
+                            public void nextFrame(ByteBuffer buffer) throws HyracksDataException {
+                                writerLock.lock();
+                                writer.nextFrame(buffer);
+                                writerLock.unlock();
+                            }
+
+                            @Override
+                            public void fail() throws HyracksDataException {
+                                writerLock.lock();
+                                writer.fail();
+                                writerLock.unlock();
+                            }
+
+                            @Override
+                            public void close() throws HyracksDataException {
+                                writerLock.lock();
+                                writer.close();
+                                writerLock.unlock();
+                            }
+
+                            @Override
+                            public void flush() throws HyracksDataException {
+                                writerLock.lock();
+                                writer.flush();
+                                writerLock.unlock();
+                            }
+                        };
                         this.recordDesc = recordDesc;
                         break;
 
                     case EVENT_QUEUE_OUTPUT_INDEX:
-                        this.messageWriter = writer;
+                        this.messageWriter = (partition != COORDINATOR_PARTITION_INDEX) ? writer : new IFrameWriter() {
+                            private final ReentrantLock writerLock = TracerLock.get("MessageWriter_" + partition);
+
+                            @Override
+                            public void open() throws HyracksDataException {
+                                // We do not expect contention here.
+                                writer.open();
+                            }
+
+                            @Override
+                            public void nextFrame(ByteBuffer buffer) throws HyracksDataException {
+                                writerLock.lock();
+                                writer.nextFrame(buffer);
+                                writerLock.unlock();
+                            }
+
+                            @Override
+                            public void fail() throws HyracksDataException {
+                                writerLock.lock();
+                                writer.fail();
+                                writerLock.unlock();
+                            }
+
+                            @Override
+                            public void close() throws HyracksDataException {
+                                writerLock.lock();
+                                writer.close();
+                                writerLock.unlock();
+                            }
+
+                            @Override
+                            public void flush() throws HyracksDataException {
+                                writerLock.lock();
+                                writer.flush();
+                                writerLock.unlock();
+                            }
+                        };
                         break;
 
                     default:

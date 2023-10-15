@@ -23,6 +23,7 @@ import java.util.Set;
 import org.apache.asterix.algebra.base.ILangExpressionToPlanTranslatorFactory;
 import org.apache.asterix.compiler.provider.IRuleSetFactory;
 import org.apache.asterix.compiler.provider.SqlppCompilationProvider;
+import org.apache.asterix.graphix.algebra.compiler.option.CompilationAddContextOption;
 import org.apache.asterix.graphix.algebra.compiler.option.EvaluationMinimizeJoinsOption;
 import org.apache.asterix.graphix.algebra.compiler.option.EvaluationPreferIndexNLOption;
 import org.apache.asterix.graphix.algebra.compiler.option.SemanticsNavigationOption;
@@ -72,6 +73,7 @@ public class GraphixCompilationProvider extends SqlppCompilationProvider {
         parentConfigurableParameters.add(SemanticsPatternOption.OPTION_KEY_NAME);
         parentConfigurableParameters.add(EvaluationMinimizeJoinsOption.OPTION_KEY_NAME);
         parentConfigurableParameters.add(EvaluationPreferIndexNLOption.OPTION_KEY_NAME);
+        parentConfigurableParameters.add(CompilationAddContextOption.OPTION_KEY_NAME);
 
         // The following parameters are handled by our Algebricks layer.
         parentConfigurableParameters.add(SetGraphixMemoryRequirementsRule.LMK_OPTION_KEY_NAME);

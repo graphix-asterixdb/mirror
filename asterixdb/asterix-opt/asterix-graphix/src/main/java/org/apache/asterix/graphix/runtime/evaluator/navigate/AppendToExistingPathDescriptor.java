@@ -43,6 +43,8 @@ import org.apache.hyracks.data.std.primitive.IntegerPointable;
 import org.apache.hyracks.data.std.primitive.VoidPointable;
 import org.apache.hyracks.data.std.util.ArrayBackedValueStorage;
 import org.apache.hyracks.dataflow.common.data.accessors.IFrameTupleReference;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 /**
  * Create a new path that includes our given vertices and edge. This action is append-only, so we do not peer inside the
@@ -54,6 +56,7 @@ import org.apache.hyracks.dataflow.common.data.accessors.IFrameTupleReference;
  * </ol>
  */
 public class AppendToExistingPathDescriptor extends AbstractScalarFunctionDynamicDescriptor {
+    private static final Logger LOGGER = LogManager.getLogger();
     private static final long serialVersionUID = 1L;
 
     @Override
@@ -111,6 +114,7 @@ public class AppendToExistingPathDescriptor extends AbstractScalarFunctionDynami
                             // Increment our edge list item counter.
                             int oldEdgeItemCount = IntegerPointable.getInteger(pathData,
                                     pathArgPtr.getStartOffset() + HEADER_EDGE_ITEM_COUNT);
+                            LOGGER.trace("Path of length {} found at the APPEND_TO_PATH call.", oldEdgeItemCount);
                             int edgeItemCount = oldEdgeItemCount + 1;
                             dataOutput.writeInt(edgeItemCount);
 

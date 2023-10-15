@@ -23,10 +23,10 @@ import java.util.BitSet;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
-import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.locks.Lock;
@@ -141,35 +141,32 @@ public class PersistentBuildJoinOperatorDescriptor extends OptimizedHybridHashJo
 
                 // We need to spawn a new thread to handle our spilled-partition-JOINing.
                 private final ExecutorService executor = Executors.newSingleThreadExecutor();
-                private final Map<Integer, Future<Throwable>> futureMap = new HashMap<>();
-                private final PartitionAndJoinEnvironment joinEnvironment = createEnvironment();
+                private final Map<Integer, CompletableFuture<?>> futureMap = new HashMap<>();
                 private final AtomicBoolean isFailed = new AtomicBoolean(false);
                 private String joinerThreadNamePrefix;
 
                 private void handleExecutorErrors() throws HyracksDataException {
-                    Iterator<Future<Throwable>> futureIterator = futureMap.values().iterator();
+                    Iterator<CompletableFuture<?>> futureIterator = futureMap.values().iterator();
                     try {
                         while (futureIterator.hasNext()) {
-                            Future<Throwable> future = futureIterator.next();
+                            CompletableFuture<?> future = futureIterator.next();
                             if (future.isDone()) {
-                                if (future.get() != null) {
-                                    fail();
-                                    throw HyracksDataException.create(future.get());
-                                } else {
-                                    futureIterator.remove();
-                                }
+                                future.get();
+                                futureIterator.remove();
                             }
                         }
                     } catch (ExecutionException | InterruptedException e) {
+                        fail();
                         throw HyracksDataException.create(e);
                     }
                 }
 
                 private void closeExecutor() throws HyracksDataException {
+                    executor.shutdownNow();
                     while (!executor.isTerminated()) {
                         try {
                             if (!executor.awaitTermination(1, TimeUnit.SECONDS)) {
-                                for (Map.Entry<Integer, Future<Throwable>> futureEntry : futureMap.entrySet()) {
+                                for (Map.Entry<Integer, CompletableFuture<?>> futureEntry : futureMap.entrySet()) {
                                     if (!futureEntry.getValue().isDone()) {
                                         String joinerName = "SpilledPartitionJoiner" + futureEntry.getKey();
                                         LOGGER.debug("Waiting for {} to finish.", joinerName);
@@ -181,6 +178,7 @@ public class PersistentBuildJoinOperatorDescriptor extends OptimizedHybridHashJo
                             throw HyracksDataException.create(e);
                         }
                     }
+                    handleExecutorErrors();
                 }
 
                 @Override
@@ -244,6 +242,7 @@ public class PersistentBuildJoinOperatorDescriptor extends OptimizedHybridHashJo
                         handleExecutorErrors();
 
                         // Prepare a new JOIN to handle all probe tuples hereafter.
+                        final PartitionAndJoinEnvironment joinEnvironment = createEnvironment();
                         final OptimizedHybridHashJoin newJoin = new PersistentBuildJoin(state.hybridHJ);
                         final OptimizedHybridHashJoin closingJoin = state.hybridHJ;
                         final VSizeFrame markerBuffer = new VSizeFrame(ctx);
@@ -254,8 +253,9 @@ public class PersistentBuildJoinOperatorDescriptor extends OptimizedHybridHashJo
                         // Delegate this spilled-partition-JOINing to a separate thread.
                         final int consumerInvocations = markerConsumer.getInvocations((short) partition);
                         final String newThreadName = joinerThreadNamePrefix + consumerInvocations;
-                        LOGGER.trace("{} has been submitted to the work queue.", newThreadName);
-                        futureMap.put(consumerInvocations, executor.submit(() -> {
+                        final CompletableFuture<Void> completableFuture = new CompletableFuture<>();
+                        futureMap.put(consumerInvocations, completableFuture);
+                        executor.submit(() -> {
                             final String originalThreadName = Thread.currentThread().getName();
                             Thread.currentThread().setName(originalThreadName + "_" + newThreadName);
                             LOGGER.trace("{} has started.", newThreadName);
@@ -284,7 +284,7 @@ public class PersistentBuildJoinOperatorDescriptor extends OptimizedHybridHashJo
                                         if (pReader != null) {
                                             pReader.close();
                                         }
-                                        LOGGER.trace("Skipping JOIN for partition {}.", +pid);
+                                        LOGGER.trace("Skipping JOIN for partition {}.", pid);
                                         continue;
                                     }
                                     LOGGER.trace("Starting JOIN for partition {}.", pid);
@@ -302,15 +302,16 @@ public class PersistentBuildJoinOperatorDescriptor extends OptimizedHybridHashJo
                                 writer.nextFrame(markerBuffer.getBuffer());
                                 ctx.deallocateFrames(ctx.getInitialFrameSize());
                                 LOGGER.trace("{} has finished.", newThreadName);
-                                return null;
+                                completableFuture.complete(null);
 
                             } catch (Exception e) {
-                                return e;
+                                completableFuture.completeExceptionally(e);
 
                             } finally {
                                 Thread.currentThread().setName(originalThreadName);
                             }
-                        }));
+                        });
+                        LOGGER.trace("{} has been submitted to the work queue.", newThreadName);
 
                     } else {
                         super.nextFrame(buffer);
@@ -320,9 +321,7 @@ public class PersistentBuildJoinOperatorDescriptor extends OptimizedHybridHashJo
                 @Override
                 public void close() throws HyracksDataException {
                     LOGGER.debug("close() has been invoked for this runtime!");
-                    executor.shutdown();
                     closeExecutor();
-                    handleExecutorErrors();
                     super.close();
                     LOGGER.debug("close() has finished for this runtime!");
                 }
@@ -334,7 +333,6 @@ public class PersistentBuildJoinOperatorDescriptor extends OptimizedHybridHashJo
 
                         // On fail, we still need to wait for our executor-service to close all of our threads.
                         isFailed.getAndSet(true);
-                        executor.shutdownNow();
                         closeExecutor();
                     }
                 }

@@ -139,9 +139,9 @@ public class RecursiveSequenceAction extends AbstractRecursiveAction {
                 CallExpr edgeCountFromHeaderExpr = new CallExpr(functionSignature, functionArgs);
                 edgeCountFromHeaderExpr.setSourceLocation(pathPatternExpr.getSourceLocation());
 
-                // Our bounds are inclusive.
+                // Our bounds are inclusive, but this WHERE appears before the APPEND.
                 OperatorExpr operatorExpr = new OperatorExpr();
-                operatorExpr.addOperator(OperatorType.LE);
+                operatorExpr.addOperator(OperatorType.LT);
                 operatorExpr.addOperand(edgeCountFromHeaderExpr);
                 operatorExpr.addOperand(maximumHopCountExpr);
                 WhereClause whereClause = new WhereClause(operatorExpr);

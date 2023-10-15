@@ -41,6 +41,7 @@ public enum Event {
     NACK_A,
     ACK_B,
     NACK_B,
+    POISON,
 
     // Event from the tuple-processing thread to state-machine manager thread.
     MARKER;

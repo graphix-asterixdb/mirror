@@ -88,7 +88,7 @@ public class CheckUnboundedAllPathSemanticsRule implements IAlgebraicRewriteRule
                 case SELECT:
                     SelectOperator selectOp = (SelectOperator) workingOp;
                     MutableBoolean isEdgeCountFilterFound = new MutableBoolean(false);
-                    new InExpressionFunctionFinder(BuiltinFunctions.LE).searchAndUse(selectOp.getCondition(), e -> {
+                    new InExpressionFunctionFinder(BuiltinFunctions.LT).searchAndUse(selectOp.getCondition(), e -> {
                         FunctionIdentifier id = GraphixFunctionIdentifiers.EDGE_COUNT_FROM_HEADER;
                         isEdgeCountFilterFound.setValue(new InExpressionFunctionFinder(id).search(e));
                     });

@@ -134,7 +134,7 @@ class Neo4jBenchmarkClient(AbstractBenchmarkClient):
                 explain_query, profile_query = f'EXPLAIN {query}', f'PROFILE {query}'
                 response = session.run(explain_query if is_explain else profile_query if is_profile else query)
 
-                # Handle our results. Different fields with show up in our result depending on the execution mode.
+                # Handle our results. Different fields show up in our result depending on the execution mode.
                 json_f = lambda j: json.dumps(j, default=lambda d: str(d))
                 results = {'results': json_f(response.data())}
                 result_summary = response.consume()

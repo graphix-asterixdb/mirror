@@ -44,19 +44,19 @@
         </Logger>
 
         <!-- ... and all of our fixed-point related operators.-->
-        <Logger name="org.apache.hyracks.dataflow.std.iteration" level="INFO">
+        <Logger name="org.apache.hyracks.dataflow.std.iteration" level="TRACE">
             <AppenderRef ref="Console"/>
         </Logger>
-        <Logger name="org.apache.hyracks.dataflow.std.join.PersistentBuildJoinOperatorDescriptor" level="INFO">
+        <Logger name="org.apache.hyracks.dataflow.std.join.PersistentBuildJoinOperatorDescriptor" level="TRACE">
             <AppenderRef ref="Console"/>
         </Logger>
-        <Logger name="org.apache.hyracks.dataflow.std.connectors" level="INFO">
+        <Logger name="org.apache.hyracks.dataflow.std.connectors" level="TRACE">
             <AppenderRef ref="Console"/>
         </Logger>
-        <Logger name="org.apache.hyracks.dataflow.std.message" level="INFO">
+        <Logger name="org.apache.hyracks.dataflow.std.message" level="TRACE">
             <AppenderRef ref="Console"/>
         </Logger>
-        <Logger name="org.apache.hyracks.algebricks.runtime.operators.message" level="INFO">
+        <Logger name="org.apache.hyracks.algebricks.runtime.operators.message" level="TRACE">
             <AppenderRef ref="Console"/>
         </Logger>
     </Loggers>

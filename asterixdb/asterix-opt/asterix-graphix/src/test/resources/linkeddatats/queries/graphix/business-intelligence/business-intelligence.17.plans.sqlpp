@@ -26,9 +26,8 @@ SET `graphix.semantics.pattern` "homomorphism";
 EXPLAIN
 FROM
     GRAPH SNB.Native.SNBGraph
-        (person1:Person)<-[:HAS_CREATOR]-(message1:Message),
+        (tag:Tag)<-[:HAS_TAG]-(message1:Message)-[:HAS_CREATOR]->(person1:Person),
         (message1)-[:REPLY_OF*]->(post1:Message)<-[:CONTAINER_OF]-(forum1:Forum),
-        (message1)-[:HAS_TAG]->(tag:Tag),
         (forum1)-[:HAS_MEMBER]->(person2:Person)<-[:HAS_CREATOR]-(comment:Message)-[:HAS_TAG]->(tag),
         (forum1)-[:HAS_MEMBER]->(person3:Person)<-[:HAS_CREATOR]-(message2:Message),
         (comment)-[:REPLY_OF]->(message2)-[:REPLY_OF*]->(post2:Message)<-[:CONTAINER_OF]-(forum2:Forum)

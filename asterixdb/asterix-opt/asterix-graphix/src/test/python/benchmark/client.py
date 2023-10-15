@@ -239,7 +239,7 @@ class AbstractBenchmarkClient(abc.ABC):
         # The driver includes a $limit parameter, but this does not show up in the parameter files. Add it here.
         if re.match(r'^(interactive-(4|6|10|11|personId))|(bi-17)', file_name):
             parameter_sample['limit'] = 10
-        elif re.match(r'^(interactive-(2|3|5|7|8|9|12))|(bi-(3|16|18|20))', file_name):
+        elif re.match(r'^(interactive-(1|2|3|5|7|8|9|12))|(bi-(3|16|18|20))', file_name):
             parameter_sample['limit'] = 20
         elif re.match(r'^bi-(2|4|5|6|7|8|9|10|13|14)', file_name):
             parameter_sample['limit'] = 100
