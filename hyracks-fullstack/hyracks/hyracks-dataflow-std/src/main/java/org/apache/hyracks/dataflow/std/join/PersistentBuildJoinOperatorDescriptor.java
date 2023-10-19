@@ -140,7 +140,7 @@ public class PersistentBuildJoinOperatorDescriptor extends OptimizedHybridHashJo
                         new FrameTupleListener(recordDescProvider.getOutputRecordDescriptor(getActivityId(), 0));
 
                 // We need to spawn a new thread to handle our spilled-partition-JOINing.
-                private final ExecutorService executor = Executors.newSingleThreadExecutor();
+                private final ExecutorService executor = Executors.newSingleThreadExecutor(Thread::new);
                 private final Map<Integer, CompletableFuture<?>> futureMap = new HashMap<>();
                 private final AtomicBoolean isFailed = new AtomicBoolean(false);
                 private String joinerThreadNamePrefix;

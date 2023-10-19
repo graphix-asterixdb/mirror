@@ -25,9 +25,6 @@ import org.apache.hyracks.api.exceptions.ErrorCode;
 import org.apache.hyracks.api.exceptions.HyracksDataException;
 import org.apache.hyracks.data.std.primitive.IntegerPointable;
 
-/**
- * Event given to the anchor / manager thread to handle.
- */
 public enum Event {
     // Events from the termination coordinator to all participants.
     VOTE_ON_A,
@@ -41,9 +38,11 @@ public enum Event {
     NACK_A,
     ACK_B,
     NACK_B,
+
+    // Event used to end the termination coordinator / participant thread.
     POISON,
 
-    // Event from the tuple-processing thread to state-machine manager thread.
+    // Event from the frame-processing thread to state-machine manager thread.
     MARKER;
 
     private final static Map<Integer, Event> ordinalEventMap;

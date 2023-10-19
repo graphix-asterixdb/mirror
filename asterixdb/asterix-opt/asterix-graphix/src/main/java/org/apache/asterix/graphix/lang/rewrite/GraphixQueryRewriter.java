@@ -229,9 +229,7 @@ public class GraphixQueryRewriter extends SqlppQueryRewriter {
 
         // For any tools that need additional context on how the query was interpreted, add this information here.
         LOGGER.trace("Attaching additional Graphix-specific context to our result.");
-        ResponseFieldPrinterVisitor responseFieldPrinterVisitor =
-                new ResponseFieldPrinterVisitor(graphixRewritingContext);
-        rewriteExpr(topStatement, responseFieldPrinterVisitor);
+        rewriteExpr(topStatement, new ResponseFieldPrinterVisitor(graphixRewritingContext));
 
         // Transform all graph AST nodes (i.e. perform the representation lowering).
         LOGGER.trace("Lowering the Graphix AST-specific nodes representation to a SQL++ representation.");

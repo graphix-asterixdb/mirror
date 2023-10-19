@@ -42,7 +42,7 @@ import org.junit.runners.Parameterized;
 public class GraphixLinkedDataTest {
     private static final String PATH_ACTUAL = FileUtil.joinPath("target", "ldtest");
     private static final String PATH_BASE = FileUtil.joinPath("src", "test", "resources", "linkeddatats");
-    private static final String FILE_TEST_CONFIG = FileUtil.joinPath("src", "test", "resources", "cc.conf");
+    private static final String FILE_TEST_CONFIG = FileUtil.joinPath("src", "test", "resources", "test-1.conf");
     private static final String[] SETUP_FILES;
 
     // This test runs off the same graph. This is specified with the setup files below.

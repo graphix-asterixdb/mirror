@@ -25,6 +25,8 @@ import org.apache.hyracks.algebricks.common.exceptions.AlgebricksException;
 import org.apache.hyracks.algebricks.core.algebra.base.IOptimizationContext;
 import org.apache.hyracks.algebricks.core.algebra.base.IPhysicalOperator;
 import org.apache.hyracks.algebricks.core.algebra.operators.logical.DistinctOperator;
+import org.apache.hyracks.algebricks.core.algebra.operators.logical.FixedPointOperator;
+import org.apache.hyracks.algebricks.core.algebra.operators.physical.FixedPointPOperator;
 import org.apache.hyracks.algebricks.core.algebra.properties.LocalMemoryRequirements;
 import org.apache.hyracks.algebricks.core.algebra.visitors.ILogicalOperatorVisitor;
 import org.apache.hyracks.api.exceptions.ErrorCode;
@@ -35,8 +37,9 @@ import org.apache.logging.log4j.Logger;
 public class SetGraphixMemoryRequirementsRule extends SetAsterixMemoryRequirementsRule {
     private static final Logger LOGGER = LogManager.getLogger();
 
-    // The following is set in the configuration file or with a SET statement.
+    // The following are set in the configuration file or with a SET statement.
     public static final String LMK_OPTION_KEY_NAME = "graphix.compiler.lmkmemory";
+    public static final String FP_OPTION_KEY_NAME = "graphix.compiler.fpmemory";
 
     @Override
     protected ILogicalOperatorVisitor<Void, Void> createMemoryRequirementsConfigurator(IOptimizationContext context) {
@@ -46,9 +49,31 @@ public class SetGraphixMemoryRequirementsRule extends SetAsterixMemoryRequiremen
 
     private static final class GraphixMemoryRequirementsConfigurator extends MemoryRequirementsConfigurator {
         private static final long _32MB = (long) 32 * 1048576;
+        private static final long _64MB = (long) 64 * 1048576;
 
         private GraphixMemoryRequirementsConfigurator(IOptimizationContext context) {
             super(context);
+        }
+
+        @Override
+        public Void visitFixedPointOperator(FixedPointOperator op, Void arg) throws AlgebricksException {
+            Object fpOptionPropertyValue = physConfig.getExtensionProperty(FP_OPTION_KEY_NAME);
+            long memBudget = (fpOptionPropertyValue == null) ? _64MB
+                    : OptionTypes.LONG_BYTE_UNIT.parse((String) fpOptionPropertyValue);
+            int memBudgetInFrames = (int) (memBudget / physConfig.getFrameSize());
+
+            // Make sure we aren't under-allocating.
+            FixedPointPOperator pOp = (FixedPointPOperator) op.getPhysicalOperator();
+            LocalMemoryRequirements memoryReqs = pOp.getLocalMemoryRequirements();
+            int minBudgetInFrames = memoryReqs.getMinMemoryBudgetInFrames();
+            if (memBudgetInFrames < minBudgetInFrames) {
+                throw AlgebricksException.create(ErrorCode.ILLEGAL_MEMORY_BUDGET, op.getSourceLocation(),
+                        op.getOperatorTag().toString(), memBudgetInFrames * physConfig.getFrameSize(),
+                        minBudgetInFrames * physConfig.getFrameSize());
+            }
+            LOGGER.debug("FP operator has been assigned a budget of {} frames.", memBudgetInFrames);
+            memoryReqs.setMemoryBudgetInFrames(memBudgetInFrames);
+            return super.visitFixedPointOperator(op, arg);
         }
 
         @Override

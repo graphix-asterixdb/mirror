@@ -28,36 +28,30 @@
     <Loggers>
         <Root level="INFO">
             <AppenderRef ref="InfoLog"/>
+            <AppenderRef ref="Console"/>
         </Root>
-        <Logger name="org.apache.hyracks" level="INFO"/>
-        <Logger name="org.apache.asterix" level="INFO"/>
-        <Logger name="org.apache.hyracks.algebricks" level="INFO"/>
+        <Logger name="org.apache.asterix" level="ERROR"/>
+        <Logger name="org.apache.hyracks" level="ERROR"/>
+        <Logger name="org.apache.hyracks.algebricks" level="ERROR"/>
+        <Logger name="org.apache.asterix.graphix" level="INFO"/>
 
-        <!-- For our tests... -->
-        <Logger name="org.apache.hyracks.tests.integration" level="INFO">
-            <AppenderRef ref="Console"/>
-        </Logger>
+        <!-- To see what's going in our tests. -->
+        <Logger name="org.apache.hyracks.tests.integration.FixedPointOperatorTest" level="INFO"/>
+        <Logger name="org.apache.asterix.graphix.test.runtime.reachability.SingleSourceReachabilityTest" level="INFO"/>
+        <Logger name="org.apache.asterix.graphix.test.runtime.LocalTopKRuntimeTest" level="INFO"/>
 
-        <!-- We need to see what's going in Graphix... -->
-        <Logger name="org.apache.asterix.graphix" level="INFO">
-            <AppenderRef ref="Console"/>
-        </Logger>
-
-        <!-- ... and all of our fixed-point related operators.-->
-        <Logger name="org.apache.hyracks.dataflow.std.iteration" level="TRACE">
-            <AppenderRef ref="Console"/>
-        </Logger>
-        <Logger name="org.apache.hyracks.dataflow.std.join.PersistentBuildJoinOperatorDescriptor" level="TRACE">
-            <AppenderRef ref="Console"/>
-        </Logger>
-        <Logger name="org.apache.hyracks.dataflow.std.connectors" level="TRACE">
-            <AppenderRef ref="Console"/>
-        </Logger>
-        <Logger name="org.apache.hyracks.dataflow.std.message" level="TRACE">
-            <AppenderRef ref="Console"/>
-        </Logger>
-        <Logger name="org.apache.hyracks.algebricks.runtime.operators.message" level="TRACE">
-            <AppenderRef ref="Console"/>
-        </Logger>
+        <!-- Some important classes we want to peek inside of. :-) -->
+        <Logger name="org.apache.hyracks.dataflow.std.join.PersistentBuildJoinOperatorDescriptor" level="INFO"/>
+        <Logger name="org.apache.hyracks.dataflow.std.connectors.StateReleaseConnectorDescriptor" level="INFO"/>
+        <Logger name="org.apache.hyracks.dataflow.std.misc.StateReleaseOperatorDescriptor" level="INFO"/>
+        <Logger name="org.apache.hyracks.algebricks.runtime.operators.message.StateReleaseRuntimeFactory" level="INFO"/>
+        <Logger name="org.apache.hyracks.dataflow.std.message.FrameTupleListener" level="INFO"/>
+        <Logger name="org.apache.hyracks.dataflow.std.iteration.common.TLock" level="INFO"/>
+        <Logger name="org.apache.hyracks.dataflow.std.iteration.runtime.CoordinatorStateManager" level="TRACE"/>
+        <Logger name="org.apache.hyracks.dataflow.std.iteration.runtime.FixedPointActivityChannel" level="INFO"/>
+        <Logger name="org.apache.hyracks.dataflow.std.iteration.runtime.ParticipantFrameManager" level="TRACE"/>
+        <Logger name="org.apache.hyracks.dataflow.std.iteration.runtime.ParticipantStateManager" level="TRACE"/>
+        <Logger name="org.apache.hyracks.dataflow.std.iteration.FixedPointConnectorDescriptor" level="INFO"/>
+        <Logger name="org.apache.hyracks.dataflow.std.iteration.FixedPointOperatorDescriptor" level="INFO"/>
     </Loggers>
 </Configuration>

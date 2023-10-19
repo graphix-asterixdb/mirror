@@ -33,7 +33,6 @@ import org.apache.hyracks.api.job.IActivityClusterGraphGeneratorFactory;
 import org.apache.hyracks.api.job.JobActivityGraph;
 import org.apache.hyracks.api.job.JobFlag;
 import org.apache.hyracks.api.job.JobSpecification;
-import org.apache.hyracks.api.rewriter.ActivityClusterGraphRewriter;
 
 public class JobSpecificationActivityClusterGraphGeneratorFactory implements IActivityClusterGraphGeneratorFactory {
     private static final long serialVersionUID = 1L;
@@ -91,8 +90,8 @@ public class JobSpecificationActivityClusterGraphGeneratorFactory implements IAc
         return new IActivityClusterGraphGenerator() {
             @Override
             public ActivityClusterGraph initialize() {
-                ActivityClusterGraphRewriter rewriter = new ActivityClusterGraphRewriter();
-                rewriter.rewrite(acg);
+                //                ActivityClusterGraphRewriter rewriter = new ActivityClusterGraphRewriter();
+                //                rewriter.rewrite(acg);
                 return acg;
             }
 

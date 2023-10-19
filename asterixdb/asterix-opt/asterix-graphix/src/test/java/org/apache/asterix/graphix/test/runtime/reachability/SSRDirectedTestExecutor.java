@@ -592,7 +592,7 @@ public class SSRDirectedTestExecutor implements Serializable {
             // 11. Replicate the tuples from our fixed point. We have two outputs.
             // 12a. Project out only the path from the fixed-point output.
             // 12b. Write the previous projection to a file.
-            IOperatorDescriptor fpOp = new FixedPointOperatorDescriptor(spec, fpRecDesc, (byte) 1);
+            IOperatorDescriptor fpOp = new FixedPointOperatorDescriptor(spec, fpRecDesc, 2, (byte) 1);
             PartitionConstraintHelper.addAbsoluteLocationConstraint(spec, fpOp, test.getNodeNames());
             IOperatorDescriptor afterFpOp = buildAfterFixedPointOp(spec, test);
             IOperatorDescriptor replicateOp = buildReplicateOp(spec, test);

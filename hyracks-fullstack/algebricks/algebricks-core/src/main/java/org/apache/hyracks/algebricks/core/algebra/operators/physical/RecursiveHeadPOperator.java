@@ -18,8 +18,6 @@
  */
 package org.apache.hyracks.algebricks.core.algebra.operators.physical;
 
-import static org.apache.hyracks.dataflow.std.iteration.FixedPointBaseOperatorDescriptor.RECURSIVE_INPUT_INDEX;
-
 import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.Deque;
@@ -50,6 +48,7 @@ import org.apache.hyracks.api.dataflow.value.RecordDescriptor;
 import org.apache.hyracks.api.exceptions.ErrorCode;
 import org.apache.hyracks.api.job.JobSpecification;
 import org.apache.hyracks.dataflow.std.connectors.OneToOneConnectorDescriptor;
+import org.apache.hyracks.dataflow.std.iteration.FixedPointOperatorDescriptor;
 import org.apache.hyracks.dataflow.std.misc.ReplicateOperatorDescriptor;
 
 public class RecursiveHeadPOperator extends AbstractPhysicalOperator {
@@ -139,7 +138,7 @@ public class RecursiveHeadPOperator extends AbstractPhysicalOperator {
         ILogicalOperator rootOp = rootOpRef.getValue();
         builder.contributeGraphEdge(op, 1, exchangeOp, 0);
         builder.contributeGraphEdge(exchangeOp, 0, aboveTailOp, 0);
-        builder.contributeGraphEdge(rootOp, 0, fpOp, RECURSIVE_INPUT_INDEX);
+        builder.contributeGraphEdge(rootOp, 0, fpOp, FixedPointOperatorDescriptor.RECURSIVE_INPUT_INDEX);
     }
 
     private void compileOpRefInPlanLoop(Mutable<ILogicalOperator> opRef, JobGenContext context,

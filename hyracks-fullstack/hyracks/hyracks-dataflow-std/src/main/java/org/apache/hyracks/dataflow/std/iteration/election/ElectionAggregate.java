@@ -90,7 +90,6 @@ public class ElectionAggregate implements Serializable {
                     throw new HyracksDataException(ErrorCode.ILLEGAL_STATE, "Illegal event given!");
             }
             if (!isValid) {
-                System.out.println("Illegal sequence of events! " + this);
                 throw new HyracksDataException(ErrorCode.ILLEGAL_STATE, "Illegal sequence of events! " + this);
             }
         }

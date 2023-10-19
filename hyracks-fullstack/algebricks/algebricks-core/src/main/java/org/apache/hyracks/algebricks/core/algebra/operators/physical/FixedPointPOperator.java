@@ -29,6 +29,7 @@ import org.apache.hyracks.algebricks.core.algebra.expressions.IVariableTypeEnvir
 import org.apache.hyracks.algebricks.core.algebra.operators.logical.FixedPointOperator;
 import org.apache.hyracks.algebricks.core.algebra.operators.logical.IOperatorSchema;
 import org.apache.hyracks.algebricks.core.algebra.properties.IPhysicalPropertiesVector;
+import org.apache.hyracks.algebricks.core.algebra.properties.LocalMemoryRequirements;
 import org.apache.hyracks.algebricks.core.algebra.properties.PhysicalRequirements;
 import org.apache.hyracks.algebricks.core.algebra.properties.RandomPartitioningProperty;
 import org.apache.hyracks.algebricks.core.algebra.properties.StructuralPropertiesVector;
@@ -37,7 +38,6 @@ import org.apache.hyracks.algebricks.core.jobgen.impl.JobGenHelper;
 import org.apache.hyracks.api.dataflow.value.RecordDescriptor;
 import org.apache.hyracks.api.exceptions.ErrorCode;
 import org.apache.hyracks.api.job.JobSpecification;
-import org.apache.hyracks.dataflow.std.iteration.FixedPointBaseOperatorDescriptor;
 import org.apache.hyracks.dataflow.std.iteration.FixedPointOperatorDescriptor;
 
 public class FixedPointPOperator extends AbstractPhysicalOperator {
@@ -70,6 +70,12 @@ public class FixedPointPOperator extends AbstractPhysicalOperator {
     }
 
     @Override
+    public void createLocalMemoryRequirements(ILogicalOperator op) {
+        // We need at least **one** frame to buffer our input, and one output frame.
+        localMemoryRequirements = LocalMemoryRequirements.variableMemoryBudget(2);
+    }
+
+    @Override
     public void computeDeliveredProperties(ILogicalOperator op, IOptimizationContext context)
             throws AlgebricksException {
         // TODO (GLENN): We might be able to do better here... our anchor and recursive deliver different properties.
@@ -91,11 +97,12 @@ public class FixedPointPOperator extends AbstractPhysicalOperator {
         IVariableTypeEnvironment fpTypeEnv = context.getTypeEnvironment(fpOp);
         JobSpecification spec = builder.getJobSpec();
         RecordDescriptor recDesc = JobGenHelper.mkRecordDescriptor(fpTypeEnv, opSchema, context);
-        FixedPointOperatorDescriptor fpOpDesc = new FixedPointOperatorDescriptor(spec, recDesc, markerDesignation);
+        FixedPointOperatorDescriptor fpOpDesc = new FixedPointOperatorDescriptor(spec, recDesc,
+                getLocalMemoryRequirements().getMemoryBudgetInFrames(), markerDesignation);
         contributeOpDesc(builder, fpOp, fpOpDesc);
 
         // Connect our **anchor** input operator to our FP operator.
         ILogicalOperator anchorOp = fpOp.getInputs().get(0).getValue();
-        builder.contributeGraphEdge(anchorOp, 0, fpOp, FixedPointBaseOperatorDescriptor.ANCHOR_INPUT_INDEX);
+        builder.contributeGraphEdge(anchorOp, 0, fpOp, FixedPointOperatorDescriptor.ANCHOR_INPUT_INDEX);
     }
 }

@@ -49,9 +49,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 
 public class SingleSourceReachabilityTest {
     private static final Logger LOGGER = LogManager.getLogger();
-
-    @SuppressWarnings("FieldCanBeLocal")
-    private static final boolean DEBUG = true;
+    private static final boolean DEBUG = LOGGER.isDebugEnabled();
 
     @SuppressWarnings("ResultOfMethodCallIgnored")
     @Test

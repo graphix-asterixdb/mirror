@@ -18,9 +18,9 @@
  */
 package org.apache.hyracks.tests.integration;
 
-import static org.apache.hyracks.dataflow.std.iteration.FixedPointBaseOperatorDescriptor.ANCHOR_INPUT_INDEX;
-import static org.apache.hyracks.dataflow.std.iteration.FixedPointBaseOperatorDescriptor.RECURSIVE_INPUT_INDEX;
+import static org.apache.hyracks.dataflow.std.iteration.FixedPointOperatorDescriptor.ANCHOR_INPUT_INDEX;
 import static org.apache.hyracks.dataflow.std.iteration.FixedPointOperatorDescriptor.FIXED_POINT_OUTPUT_INDEX;
+import static org.apache.hyracks.dataflow.std.iteration.FixedPointOperatorDescriptor.RECURSIVE_INPUT_INDEX;
 import static org.apache.hyracks.util.file.FileUtil.joinPath;
 
 import java.io.ByteArrayOutputStream;
@@ -78,7 +78,6 @@ import org.apache.hyracks.dataflow.std.connectors.MToNBroadcastConnectorDescript
 import org.apache.hyracks.dataflow.std.connectors.MToNPartitioningConnectorDescriptor;
 import org.apache.hyracks.dataflow.std.connectors.OneToOneConnectorDescriptor;
 import org.apache.hyracks.dataflow.std.connectors.StateReleaseConnectorDescriptor;
-import org.apache.hyracks.dataflow.std.iteration.FixedPointBaseOperatorDescriptor;
 import org.apache.hyracks.dataflow.std.iteration.FixedPointOperatorDescriptor;
 import org.apache.hyracks.dataflow.std.join.JoinComparatorFactory;
 import org.apache.hyracks.dataflow.std.join.PersistentBuildJoinOperatorDescriptor;
@@ -171,107 +170,6 @@ public class FixedPointOperatorTest implements Serializable {
      * <ul>
      *   <li>Single partition.</li>
      *   <li>No PBJ operators.</li>
-     *   <li>Zero iterations.</li>
-     * </ul>
-     */
-    @Test
-    public void NonRecursiveTestCase0() throws Exception {
-        class TestFixedPointOperatorDescriptor extends FixedPointBaseOperatorDescriptor {
-            public TestFixedPointOperatorDescriptor(IOperatorDescriptorRegistry spec, RecordDescriptor recDesc) {
-                super(spec, recDesc, 1);
-            }
-
-            @Override
-            public void contributeActivities(IActivityGraphBuilder builder) {
-                ActivityId fixedPointActivityID = new ActivityId(getOperatorId(), 0);
-                IActivity fixedPointActivityNode = new TestFixedPointActivityNode(fixedPointActivityID);
-                builder.addActivity(this, fixedPointActivityNode);
-                builder.addSourceEdge(ANCHOR_INPUT_INDEX, fixedPointActivityNode, 0);
-                builder.addSourceEdge(RECURSIVE_INPUT_INDEX, fixedPointActivityNode, 1);
-                builder.addTargetEdge(0, fixedPointActivityNode, 0);
-            }
-
-            class TestFixedPointActivityNode extends AbstractFixedPointActivityNode {
-                public TestFixedPointActivityNode(ActivityId id) {
-                    super(id);
-                }
-
-                @Override
-                public IOperatorNodePushable createPushRuntime(IHyracksTaskContext ctx,
-                        IRecordDescriptorProvider recordDescProvider, int partition, int nPartitions) {
-                    return new TestFixedPointPushRuntime(ctx);
-                }
-
-                class TestFixedPointPushRuntime extends AbstractFixedPointPushRuntime {
-                    private boolean isAnchorClosed = false;
-                    private boolean isRecursiveClosed = false;
-
-                    public TestFixedPointPushRuntime(IHyracksTaskContext ctx) {
-                        super(ctx, 1, 1);
-                    }
-
-                    @Override
-                    protected AnchorInputPushRuntime getAnchorInputRuntime() {
-                        return new AnchorInputPushRuntime() {
-                            @Override
-                            public void close() throws HyracksDataException {
-                                isAnchorClosed = true;
-                                if (isRecursiveClosed && isAnchorClosed) {
-                                    downstreamWriter.close();
-                                }
-                            }
-                        };
-                    }
-
-                    @Override
-                    protected RecursiveInputPushRuntime getRecursiveInputRuntime() {
-                        return new RecursiveInputPushRuntime() {
-                            @Override
-                            public void close() throws HyracksDataException {
-                                super.close();
-                                isRecursiveClosed = true;
-                                if (isAnchorClosed && isRecursiveClosed) {
-                                    downstreamWriter.close();
-                                }
-                            }
-                        };
-                    }
-
-                    @Override
-                    public void setOutputFrameWriter(int index, IFrameWriter writer, RecordDescriptor recordDesc) {
-                        if (index == 0) {
-                            this.downstreamWriter = writer;
-                            this.recordDesc = recordDesc;
-                        } else {
-                            throw new IndexOutOfBoundsException();
-                        }
-                    }
-                }
-            }
-        }
-        RecordDescriptor recDesc = new RecordDescriptor(serdeArray1);
-        JobSpecification spec = new JobSpecification();
-
-        IOperatorDescriptor oddNumberGenerator = new TestGeneratorOperatorDescriptor(spec, recDesc, true);
-        IOperatorDescriptor evenNumberGenerator = new TestGeneratorOperatorDescriptor(spec, recDesc, false);
-        IOperatorDescriptor fixedPoint = new TestFixedPointOperatorDescriptor(spec, recDesc);
-        IOperatorDescriptor resultSink = new TestResultSinkOperatorDescriptor(spec, recDesc, 4950);
-        PartitionConstraintHelper.addAbsoluteLocationConstraint(spec, oddNumberGenerator, ncNames[0]);
-        PartitionConstraintHelper.addAbsoluteLocationConstraint(spec, evenNumberGenerator, ncNames[1]);
-        PartitionConstraintHelper.addAbsoluteLocationConstraint(spec, fixedPoint, ncNames[1]);
-        PartitionConstraintHelper.addAbsoluteLocationConstraint(spec, resultSink, ncNames[0]);
-
-        spec.connect(new MToNBroadcastConnectorDescriptor(spec), oddNumberGenerator, 0, fixedPoint, 0);
-        spec.connect(new MToNBroadcastConnectorDescriptor(spec), evenNumberGenerator, 0, fixedPoint, 1);
-        spec.connect(new MToNBroadcastConnectorDescriptor(spec), fixedPoint, 0, resultSink, 0);
-        spec.addRoot(resultSink);
-        runTest(spec);
-    }
-
-    /**
-     * <ul>
-     *   <li>Single partition.</li>
-     *   <li>No PBJ operators.</li>
      *   <li>One iteration.</li>
      * </ul>
      */
@@ -281,7 +179,7 @@ public class FixedPointOperatorTest implements Serializable {
         RecordDescriptor recDesc = new RecordDescriptor(serdeArray1);
 
         IOperatorDescriptor oddNumberGenerator = new TestGeneratorOperatorDescriptor(spec, recDesc, true);
-        IOperatorDescriptor fixedPoint = new FixedPointOperatorDescriptor(spec, recDesc, (byte) 1);
+        IOperatorDescriptor fixedPoint = new FixedPointOperatorDescriptor(spec, recDesc, 2, (byte) 1);
         IOperatorDescriptor replicate = new ReplicateOperatorDescriptor(spec, recDesc, 2);
         IOperatorDescriptor select = new TestSelectOperatorDescriptor(spec, recDesc, 0);
         IOperatorDescriptor resultSink = new TestResultSinkOperatorDescriptor(spec, recDesc, 2500);
@@ -324,7 +222,7 @@ public class FixedPointOperatorTest implements Serializable {
                 new JoinComparatorFactory(IntegerBinaryComparatorFactory.INSTANCE, 0, 0),
                 new JoinComparatorFactory(IntegerBinaryComparatorFactory.INSTANCE, 0, 0), null, null, (byte) 1, false,
                 null);
-        IOperatorDescriptor fixedPoint = new FixedPointOperatorDescriptor(spec, recDesc1, (byte) 1);
+        IOperatorDescriptor fixedPoint = new FixedPointOperatorDescriptor(spec, recDesc1, 2, (byte) 1);
         IOperatorDescriptor replicate = new ReplicateOperatorDescriptor(spec, recDesc1, 2);
         IOperatorDescriptor select = new TestSelectOperatorDescriptor(spec, recDesc1, 0);
         IOperatorDescriptor resultSink = new TestResultSinkOperatorDescriptor(spec, recDesc1, 2500);
@@ -374,7 +272,7 @@ public class FixedPointOperatorTest implements Serializable {
                 new JoinComparatorFactory(IntegerBinaryComparatorFactory.INSTANCE, 0, 0),
                 new JoinComparatorFactory(IntegerBinaryComparatorFactory.INSTANCE, 0, 0), null, null, (byte) 1, false,
                 null);
-        IOperatorDescriptor fixedPoint = new FixedPointOperatorDescriptor(spec, recDesc1, (byte) 1);
+        IOperatorDescriptor fixedPoint = new FixedPointOperatorDescriptor(spec, recDesc1, 2, (byte) 1);
         IOperatorDescriptor replicate = new ReplicateOperatorDescriptor(spec, recDesc1, 2);
         IOperatorDescriptor select = new TestSelectOperatorDescriptor(spec, recDesc1, 1);
         IOperatorDescriptor resultSink = new TestResultSinkOperatorDescriptor(spec, recDesc1, 5000);
@@ -424,7 +322,7 @@ public class FixedPointOperatorTest implements Serializable {
                 new JoinComparatorFactory(IntegerBinaryComparatorFactory.INSTANCE, 0, 0),
                 new JoinComparatorFactory(IntegerBinaryComparatorFactory.INSTANCE, 0, 0), null, null, (byte) 1, false,
                 null);
-        IOperatorDescriptor fixedPoint = new FixedPointOperatorDescriptor(spec, recDesc1, (byte) 1);
+        IOperatorDescriptor fixedPoint = new FixedPointOperatorDescriptor(spec, recDesc1, 2, (byte) 1);
         IOperatorDescriptor replicate = new ReplicateOperatorDescriptor(spec, recDesc1, 2);
         IOperatorDescriptor select = new TestSelectOperatorDescriptor(spec, recDesc1, 2);
         IOperatorDescriptor resultSink = new TestResultSinkOperatorDescriptor(spec, recDesc1, 7500);
@@ -474,7 +372,7 @@ public class FixedPointOperatorTest implements Serializable {
                 new JoinComparatorFactory(IntegerBinaryComparatorFactory.INSTANCE, 0, 0),
                 new JoinComparatorFactory(IntegerBinaryComparatorFactory.INSTANCE, 0, 0), null, null, (byte) 1, false,
                 null);
-        IOperatorDescriptor fixedPoint = new FixedPointOperatorDescriptor(spec, recDesc1, (byte) 1);
+        IOperatorDescriptor fixedPoint = new FixedPointOperatorDescriptor(spec, recDesc1, 2, (byte) 1);
         IOperatorDescriptor replicate = new ReplicateOperatorDescriptor(spec, recDesc1, 2);
         IOperatorDescriptor select = new TestSelectOperatorDescriptor(spec, recDesc1, 2);
         IOperatorDescriptor resultSink = new TestResultSinkOperatorDescriptor(spec, recDesc1, 10000);
@@ -529,7 +427,7 @@ public class FixedPointOperatorTest implements Serializable {
                 new JoinComparatorFactory(IntegerBinaryComparatorFactory.INSTANCE, 0, 0),
                 new JoinComparatorFactory(IntegerBinaryComparatorFactory.INSTANCE, 0, 0), null, null, (byte) 1, false,
                 null);
-        IOperatorDescriptor fixedPoint = new FixedPointOperatorDescriptor(spec, recDesc1, (byte) 1);
+        IOperatorDescriptor fixedPoint = new FixedPointOperatorDescriptor(spec, recDesc1, 2, (byte) 1);
         IOperatorDescriptor replicate = new ReplicateOperatorDescriptor(spec, recDesc1, 2);
         IOperatorDescriptor select = new TestSelectOperatorDescriptor(spec, recDesc1, 2);
         IOperatorDescriptor resultSink = new TestResultSinkOperatorDescriptor(spec, recDesc1, 25000);
@@ -585,13 +483,16 @@ public class FixedPointOperatorTest implements Serializable {
                 private final MarkerMessageConsumer markerMessageConsumer = new MarkerMessageConsumer((byte) 1);
                 private final IFrame outputBuffer = new VSizeFrame(ctx);
                 private final int[] projection = new int[] { 0 };
+                private IFrameWriter decoratedWriter;
 
                 @Override
                 public void open() throws HyracksDataException {
-                    writer = new AbstractDelegateFrameWriter(writer) {
+                    decoratedWriter = new AbstractDelegateFrameWriter(writer) {
                         @Override
                         public void nextFrame(ByteBuffer buffer) throws HyracksDataException {
-                            frameTupleListener.acceptFrame(buffer);
+                            if (!frameTupleListener.acceptFrame(buffer)) {
+                                return;
+                            }
                             super.nextFrame(buffer);
                         }
                     };
@@ -604,7 +505,7 @@ public class FixedPointOperatorTest implements Serializable {
                     if (FrameHelper.isMessageFrame(buffer)) {
                         if (markerMessageConsumer.accept(buffer)) {
                             frameTupleListener.startListening();
-                            frameTupleAppender.flush(writer);
+                            frameTupleAppender.flush(decoratedWriter);
                             if (frameTupleListener.hasTuples()) {
                                 MarkerMessageConsumer.raiseLiveFlag(buffer);
                             }
@@ -666,13 +567,16 @@ public class FixedPointOperatorTest implements Serializable {
                 private final MarkerMessageConsumer markerMessageConsumer = new MarkerMessageConsumer((byte) 1);
                 private final FrameTupleAppender frameTupleAppender = new FrameTupleAppender();
                 private final IFrame outFrame = new VSizeFrame(ctx);
+                private IFrameWriter decoratedWriter;
 
                 @Override
                 public void open() throws HyracksDataException {
-                    writer = new AbstractDelegateFrameWriter(writer) {
+                    decoratedWriter = new AbstractDelegateFrameWriter(writer) {
                         @Override
                         public void nextFrame(ByteBuffer buffer) throws HyracksDataException {
-                            frameTupleListener.acceptFrame(buffer);
+                            if (!frameTupleListener.acceptFrame(buffer)) {
+                                return;
+                            }
                             super.nextFrame(buffer);
                         }
                     };
@@ -686,7 +590,7 @@ public class FixedPointOperatorTest implements Serializable {
                         LOGGER.trace("Found message frame at SELECT (" + partition + ").");
                         if (markerMessageConsumer.accept(buffer)) {
                             frameTupleListener.startListening();
-                            frameTupleAppender.flush(writer);
+                            frameTupleAppender.flush(decoratedWriter);
                             if (frameTupleListener.hasTuples()) {
                                 MarkerMessageConsumer.raiseLiveFlag(buffer);
                             }
@@ -709,6 +613,8 @@ public class FixedPointOperatorTest implements Serializable {
                                     frameTupleAppender.append(frameTupleAccessor, i);
                                 }
                                 tupleEncounteredMap.put(s, tupleEncounteredMap.get(s) + 1);
+                            } else {
+                                LOGGER.trace("Dropping value " + s + " at partition " + partition + ".");
                             }
                         }
                     }
